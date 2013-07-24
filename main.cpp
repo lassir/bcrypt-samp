@@ -26,8 +26,6 @@ void thread_generate_bcrypt(AMX* amx, int playerid, int threadid, std::string bu
 
 	std::string output_str = Botan::generate_bcrypt(buffer, rng, cost);
 
-	// logprintf("bcrypt thread %d finished (%s)", threadid, output_str.c_str());
-
 	int idx;
 	if(!amx_FindPublic(amx, "OnBcryptHashed", &idx))
 	{
@@ -50,7 +48,6 @@ void thread_generate_bcrypt(AMX* amx, int playerid, int threadid, std::string bu
 // native bcrypt_hash(playerid, thread, password[], cost);
 cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 {
-
 	// Require 4 parameters
 	if(params[0] != 4 * sizeof(cell))
 	{
@@ -95,6 +92,87 @@ cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 	return 1;
 }
 
+void thread_check_bcrypt(AMX* amx, int playerid, int threadid, std::string password, std::string hash)
+{
+	bool match;
+
+	// Hash cannot be valid if it's not 60 characters long
+	if(hash.length() != 60)
+		match = false;
+	else
+	{
+		match = Botan::check_bcrypt(password, hash);
+	}
+
+	int idx;
+	if(!amx_FindPublic(amx, "OnBcryptChecked", &idx))
+	{
+		// public OnBcryptChecked(playerid, thread, bool:match);
+
+		// Push the threadid and playerid
+		amx_Push(amx, match);
+		amx_Push(amx, threadid);
+		amx_Push(amx, playerid);
+
+		// Execute and release memory
+		amx_Exec(amx, NULL, idx);
+	}
+}
+
+// native bcrypt_check(playerid, thread, const password[], const hash[]);
+cell AMX_NATIVE_CALL bcrypt_check(AMX* amx, cell* params)
+{
+	// Require 4 parameters
+	if(params[0] != 4 * sizeof(cell))
+	{
+		bcrypt_error("bcrypt_check", "Incorrect number of parameters (4 required)");
+		return 0;
+	}
+
+	// Get the parameters
+	unsigned short playerid = (unsigned short) params[1];
+	int threadid = (int) params[2];
+
+	std::string password = "";
+	std::string hash = "";
+
+	int len[2] = {NULL};
+	cell *addr[2] = {NULL};
+
+	amx_GetAddr(amx, params[3], &addr[0]);
+	amx_StrLen(addr[0], &len[0]);
+
+	amx_GetAddr(amx, params[4], &addr[1]);
+	amx_StrLen(addr[1], &len[1]);
+
+	if(len[0]++)
+	{
+		char *buffer = new char[len[0]];
+		amx_GetString(buffer, addr[0], 0, len[0]);
+
+		password = std::string(buffer);
+
+		delete[] buffer;
+	}
+
+	if(len[1]++)
+	{
+		char *buffer = new char[len[1]];
+		amx_GetString(buffer, addr[1], 0, len[1]);
+
+		hash = std::string(buffer);
+
+		delete[] buffer;
+	}
+
+	// Start a new thread
+	std::thread t(thread_check_bcrypt, amx, playerid, threadid, password, hash);
+
+	// Leave the thread running
+	t.detach();
+	return 1;
+}
+
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
 {
 	return SUPPORTS_VERSION | SUPPORTS_AMX_NATIVES;
@@ -129,6 +207,7 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 AMX_NATIVE_INFO PluginNatives[] =
 {
 	{"bcrypt_hash", bcrypt_hash},
+	{"bcrypt_check", bcrypt_check},
 	{0, 0}
 };
 
