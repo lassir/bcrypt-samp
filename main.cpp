@@ -1,13 +1,16 @@
-// -------------------------------------------------------------------------- // 
+// -------------------------------------------------------------------------- //
 //
 // bcrypt implementation for SA-MP
 //
 // Based on Botan crypto library (http://botan.randombit.net)
 // License: BSD-2 (FreeBSD) http://botan.randombit.net/license.html
-// 
+//
 // -------------------------------------------------------------------------- //
 
 #include "main.h"
+#include <iostream>
+
+Botan::LibraryInitializer init;
 
 logprintf_t logprintf;
 extern void *pAMXFunctions;
@@ -17,27 +20,44 @@ void bcrypt_error(std::string funcname, std::string error)
 	logprintf("bcrypt error: %s (Called from %s)", error.c_str(), funcname.c_str());
 }
 
-void thread_generate_bcrypt(int playerid, int threadid, std::string buffer, short cost)
+void thread_generate_bcrypt(AMX* amx, int playerid, int threadid, std::string buffer, short cost)
 {
 	Botan::AutoSeeded_RNG rng;
 
 	std::string output_str = Botan::generate_bcrypt(buffer, rng, cost);
-	
-	// Print the result
-	// Should be changed to call a callback later
-	logprintf("bcrypt thread %d finished (%s)", threadid, output_str.c_str());
+
+	// logprintf("bcrypt thread %d finished (%s)", threadid, output_str.c_str());
+
+	int idx;
+	if(!amx_FindPublic(amx, "OnBcryptHashed", &idx))
+	{
+		// public OnBcryptHashed(playerid, thread, const hash[]);
+
+		// Push the hash
+		cell addr;
+		amx_PushString(amx, &addr, NULL, output_str.c_str(), NULL, NULL);
+
+		// Push the threadid and playerid
+		amx_Push(amx, threadid);
+		amx_Push(amx, playerid);
+
+		// Execute and release memory
+		amx_Exec(amx, NULL, idx);
+		amx_Release(amx, addr);
+	}
 }
 
 // native bcrypt_hash(playerid, thread, password[], cost);
 cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 {
+
 	// Require 4 parameters
 	if(params[0] != 4 * sizeof(cell))
 	{
 		bcrypt_error("bcrypt_hash", "Incorrect number of parameters (4 required)");
 		return 0;
 	}
-	
+
 	// Get the parameters
 	unsigned short playerid = (unsigned short) params[1];
 	int threadid = (int) params[2];
@@ -50,7 +70,7 @@ cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 	}
 
 	std::string password = "";
-	
+
 	int len = NULL;
 	cell *addr = NULL;
 
@@ -67,15 +87,11 @@ cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 		delete[] buffer;
 	}
 
-	// Start a thread
-	std::thread t(thread_generate_bcrypt, playerid, threadid, password, cost);
+	// Start a new thread
+	std::thread t(thread_generate_bcrypt, amx, playerid, threadid, password, cost);
 
-	// Leave the thread running, don't wait for response
-	// This is how the plugin should work, but for some reason this throws a runtime error
-	// t.detach();
-
-	// Wait for the thread to finish (works, but not like desired)
-	t.join();
+	// Leave the thread running
+	t.detach();
 	return 1;
 }
 
@@ -86,8 +102,6 @@ PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
 
 PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 {
-	Botan::LibraryInitializer init;
-
 	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
 	logprintf = (logprintf_t) ppData[PLUGIN_DATA_LOGPRINTF];
 

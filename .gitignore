@@ -2,3 +2,4 @@
 *.cbp
 *.depend
 *.layout
+bin/
