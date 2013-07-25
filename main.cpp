@@ -55,6 +55,12 @@ Botan::LibraryInitializer init;
 logprintf_t logprintf;
 extern void *pAMXFunctions;
 
+std::vector<AMX*> p_Amx;
+
+#ifndef SUPPORTS_PROCESS_TICK
+	#define SUPPORTS_PROCESS_TICK (0x20000)
+#endif
+
 void bcrypt_error(std::string funcname, std::string error)
 {
 	logprintf("bcrypt error: %s (Called from %s)", error.c_str(), funcname.c_str());
@@ -66,23 +72,8 @@ void thread_generate_bcrypt(AMX* amx, unsigned short playerid, int threadid, std
 
 	std::string output_str = Botan::generate_bcrypt(buffer, rng, cost);
 
-	int idx;
-	if(!amx_FindPublic(amx, "OnBcryptHashed", &idx))
-	{
-		// public OnBcryptHashed(playerid, thread, const hash[]);
-
-		// Push the hash
-		cell addr;
-		amx_PushString(amx, &addr, NULL, output_str.c_str(), NULL, NULL);
-
-		// Push the threadid and playerid
-		amx_Push(amx, threadid);
-		amx_Push(amx, playerid);
-
-		// Execute and release memory
-		amx_Exec(amx, NULL, idx);
-		amx_Release(amx, addr);
-	}
+	// Add the result to the queue
+	bcrypt_queue.push_back({BCRYPT_QUEUE_HASH, playerid, threadid, output_str, false});
 }
 
 // native bcrypt_hash(playerid, thread, password[], cost);
@@ -144,19 +135,8 @@ void thread_check_bcrypt(AMX* amx, unsigned short playerid, int threadid, std::s
 		match = Botan::check_bcrypt(password, hash);
 	}
 
-	int idx;
-	if(!amx_FindPublic(amx, "OnBcryptChecked", &idx))
-	{
-		// public OnBcryptChecked(playerid, thread, bool:match);
-
-		// Push the threadid and playerid
-		amx_Push(amx, match);
-		amx_Push(amx, threadid);
-		amx_Push(amx, playerid);
-
-		// Execute and release memory
-		amx_Exec(amx, NULL, idx);
-	}
+	// Add the result to the queue
+	bcrypt_queue.push_back({BCRYPT_QUEUE_CHECK, playerid, threadid, "", match});
 }
 
 // native bcrypt_check(playerid, thread, const password[], const hash[]);
@@ -215,7 +195,7 @@ cell AMX_NATIVE_CALL bcrypt_check(AMX* amx, cell* params)
 
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
 {
-	return SUPPORTS_VERSION | SUPPORTS_AMX_NATIVES;
+	return SUPPORTS_VERSION | SUPPORTS_AMX_NATIVES | SUPPORTS_PROCESS_TICK;
 }
 
 PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
@@ -235,6 +215,8 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 
 PLUGIN_EXPORT void PLUGIN_CALL Unload()
 {
+	p_Amx.clear();
+
 	logprintf("");
 	logprintf(" ======================================== ");
 	logprintf("");
@@ -242,6 +224,60 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 	logprintf("");
 	logprintf(" ======================================== ");
 	logprintf("");
+}
+
+PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
+{
+	if(bcrypt_queue.size() > 0)
+	{
+		int amx_idx;
+		for(std::vector<AMX*>::iterator a = p_Amx.begin(); a != p_Amx.end(); ++a)
+		{
+			for(std::vector<bcrypt_queue_item>::iterator t = bcrypt_queue.begin(); t != bcrypt_queue.end(); ++t)
+			{
+				if((*t).type == BCRYPT_QUEUE_HASH)
+				{
+					// public OnBcryptHashed(playerid, thread, const hash[]);
+
+					if(!amx_FindPublic(*a, "OnBcryptHashed", &amx_idx))
+					{
+						// Push the hash
+						cell addr;
+						amx_PushString(*a, &addr, NULL, (*t).hash.c_str(), NULL, NULL);
+
+						// Push the threadid and playerid
+						amx_Push(*a, (*t).threadid);
+						amx_Push(*a, (*t).playerid);
+
+						// Execute and release memory
+						amx_Exec(*a, NULL, amx_idx);
+						amx_Release(*a, addr);
+					}
+				}
+				else if((*t).type == BCRYPT_QUEUE_CHECK)
+				{
+					// public OnBcryptChecked(playerid, thread, bool:match);
+
+					if(!amx_FindPublic(*a, "OnBcryptChecked", &amx_idx))
+					{
+						// Push the threadid and playerid
+						amx_Push(*a, (*t).match);
+						amx_Push(*a, (*t).threadid);
+						amx_Push(*a, (*t).playerid);
+
+						// Execute and release memory
+						amx_Exec(*a, NULL, amx_idx);
+					}
+				}
+			}
+		}
+
+		// Clear the queue
+		for(std::vector<bcrypt_queue_item>::iterator t = bcrypt_queue.begin(); t != bcrypt_queue.end();)
+		{
+			bcrypt_queue.erase(t);
+		}
+	}
 }
 
 AMX_NATIVE_INFO PluginNatives[] =
@@ -253,11 +289,21 @@ AMX_NATIVE_INFO PluginNatives[] =
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxLoad( AMX *amx )
 {
+	p_Amx.push_back(amx);
 	return amx_Register(amx, PluginNatives, -1);
 }
 
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxUnload( AMX *amx )
 {
+	for(std::vector<AMX*>::iterator i = p_Amx.begin(); i != p_Amx.end(); ++i)
+	{
+		if(*i == amx)
+		{
+			p_Amx.erase(i);
+			break;
+		}
+	}
+
 	return AMX_ERR_NONE;
 }

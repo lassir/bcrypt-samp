@@ -48,13 +48,19 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <thread>
-#include <vector>
+enum BCRYPT_QUEUE_TYPE
+{
+	BCRYPT_QUEUE_HASH,
+	BCRYPT_QUEUE_CHECK
+};
 
-#include "SDK/amx/amx.h"
-#include "SDK/plugincommon.h"
+struct bcrypt_queue_item
+{
+	unsigned short type;
+	unsigned short playerid;
+	int threadid;
+	std::string hash;
+	bool match;
+};
 
-#include "botan_all.h"
-#include "bcrypt_queue.h"
-
-typedef void (*logprintf_t)(char* format, ...);
+std::vector<bcrypt_queue_item> bcrypt_queue;
