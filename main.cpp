@@ -8,7 +8,6 @@
 // -------------------------------------------------------------------------- //
 
 #include "main.h"
-#include <iostream>
 
 Botan::LibraryInitializer init;
 
@@ -20,7 +19,7 @@ void bcrypt_error(std::string funcname, std::string error)
 	logprintf("bcrypt error: %s (Called from %s)", error.c_str(), funcname.c_str());
 }
 
-void thread_generate_bcrypt(AMX* amx, int playerid, int threadid, std::string buffer, short cost)
+void thread_generate_bcrypt(AMX* amx, unsigned short playerid, int threadid, std::string buffer, short cost)
 {
 	Botan::AutoSeeded_RNG rng;
 
@@ -92,7 +91,7 @@ cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 	return 1;
 }
 
-void thread_check_bcrypt(AMX* amx, int playerid, int threadid, std::string password, std::string hash)
+void thread_check_bcrypt(AMX* amx, unsigned short playerid, int threadid, std::string password, std::string hash)
 {
 	bool match;
 
