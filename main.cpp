@@ -67,7 +67,7 @@ void bcrypt_error(std::string funcname, std::string error)
 	logprintf("bcrypt error: %s (Called from %s)", error.c_str(), funcname.c_str());
 }
 
-void thread_generate_bcrypt(unsigned short playerid, int threadid, std::string buffer, short cost)
+void thread_generate_bcrypt(int thread_idx, int thread_id, std::string buffer, short cost)
 {
 	Botan::AutoSeeded_RNG rng;
 
@@ -76,10 +76,10 @@ void thread_generate_bcrypt(unsigned short playerid, int threadid, std::string b
 	std::lock_guard<std::mutex> lock(bcrypt_queue_mutex);
 
 	// Add the result to the queue
-	bcrypt_queue.push_back({BCRYPT_QUEUE_HASH, playerid, threadid, output_str, false});
+	bcrypt_queue.push_back({BCRYPT_QUEUE_HASH, thread_idx, thread_id, output_str, false});
 }
 
-// native bcrypt_hash(playerid, thread, password[], cost);
+// native bcrypt_hash(thread_idx, thread_id, password[], cost);
 cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 {
 	// Require 4 parameters
@@ -90,8 +90,8 @@ cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 	}
 
 	// Get the parameters
-	unsigned short playerid = (unsigned short) params[1];
-	int threadid = (int) params[2];
+	int thread_idx = (int) params[1];
+	int thread_id = (int) params[2];
 	unsigned short cost = (unsigned short) params[4];
 
 	if(cost < 4 || cost > 31)
@@ -119,14 +119,14 @@ cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 	}
 
 	// Start a new thread
-	std::thread t(thread_generate_bcrypt, playerid, threadid, password, cost);
+	std::thread t(thread_generate_bcrypt, thread_idx, thread_id, password, cost);
 
 	// Leave the thread running
 	t.detach();
 	return 1;
 }
 
-void thread_check_bcrypt(unsigned short playerid, int threadid, std::string password, std::string hash)
+void thread_check_bcrypt(int thread_idx, int thread_id, std::string password, std::string hash)
 {
 	bool match;
 
@@ -141,10 +141,10 @@ void thread_check_bcrypt(unsigned short playerid, int threadid, std::string pass
 	std::lock_guard<std::mutex> lock(bcrypt_queue_mutex);
 
 	// Add the result to the queue
-	bcrypt_queue.push_back({BCRYPT_QUEUE_CHECK, playerid, threadid, "", match});
+	bcrypt_queue.push_back({BCRYPT_QUEUE_CHECK, thread_idx, thread_id, "", match});
 }
 
-// native bcrypt_check(playerid, thread, const password[], const hash[]);
+// native bcrypt_check(thread_idx, thread_id, const password[], const hash[]);
 cell AMX_NATIVE_CALL bcrypt_check(AMX* amx, cell* params)
 {
 	// Require 4 parameters
@@ -155,8 +155,8 @@ cell AMX_NATIVE_CALL bcrypt_check(AMX* amx, cell* params)
 	}
 
 	// Get the parameters
-	unsigned short playerid = (unsigned short) params[1];
-	int threadid = (int) params[2];
+	int thread_idx = (int) params[1];
+	int thread_id = (int) params[2];
 
 	std::string password = "";
 	std::string hash = "";
@@ -191,7 +191,7 @@ cell AMX_NATIVE_CALL bcrypt_check(AMX* amx, cell* params)
 	}
 
 	// Start a new thread
-	std::thread t(thread_check_bcrypt, playerid, threadid, password, hash);
+	std::thread t(thread_check_bcrypt, thread_idx, thread_id, password, hash);
 
 	// Leave the thread running
 	t.detach();
@@ -244,7 +244,7 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 			{
 				if((*t).type == BCRYPT_QUEUE_HASH)
 				{
-					// public OnBcryptHashed(playerid, thread, const hash[]);
+					// public OnBcryptHashed(thread_idx, thread_id, const hash[]);
 
 					if(!amx_FindPublic(*a, "OnBcryptHashed", &amx_idx))
 					{
@@ -252,9 +252,9 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 						cell addr;
 						amx_PushString(*a, &addr, NULL, (*t).hash.c_str(), NULL, NULL);
 
-						// Push the threadid and playerid
-						amx_Push(*a, (*t).threadid);
-						amx_Push(*a, (*t).playerid);
+						// Push the thread_id and thread_idx
+						amx_Push(*a, (*t).thread_id);
+						amx_Push(*a, (*t).thread_idx);
 
 						// Execute and release memory
 						amx_Exec(*a, NULL, amx_idx);
@@ -263,14 +263,14 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 				}
 				else if((*t).type == BCRYPT_QUEUE_CHECK)
 				{
-					// public OnBcryptChecked(playerid, thread, bool:match);
+					// public OnBcryptChecked(thread_idx, thread_id, bool:match);
 
 					if(!amx_FindPublic(*a, "OnBcryptChecked", &amx_idx))
 					{
-						// Push the threadid and playerid
+						// Push the thread_id and thread_idx
 						amx_Push(*a, (*t).match);
-						amx_Push(*a, (*t).threadid);
-						amx_Push(*a, (*t).playerid);
+						amx_Push(*a, (*t).thread_id);
+						amx_Push(*a, (*t).thread_idx);
 
 						// Execute and release memory
 						amx_Exec(*a, NULL, amx_idx);

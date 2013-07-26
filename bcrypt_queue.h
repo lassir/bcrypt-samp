@@ -57,8 +57,8 @@ enum BCRYPT_QUEUE_TYPE
 struct bcrypt_queue_item
 {
 	unsigned short type;
-	unsigned short playerid;
-	int threadid;
+	int thread_idx;
+	int thread_id;
 	std::string hash;
 	bool match;
 };
