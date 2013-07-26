@@ -50,6 +50,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include <thread>
 #include <vector>
+#include <mutex>
 
 #include "SDK/amx/amx.h"
 #include "SDK/plugincommon.h"

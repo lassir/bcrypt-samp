@@ -56,6 +56,7 @@ logprintf_t logprintf;
 extern void *pAMXFunctions;
 
 std::vector<AMX*> p_Amx;
+std::mutex bcrypt_queue_mutex;
 
 #ifndef SUPPORTS_PROCESS_TICK
 	#define SUPPORTS_PROCESS_TICK (0x20000)
@@ -66,11 +67,13 @@ void bcrypt_error(std::string funcname, std::string error)
 	logprintf("bcrypt error: %s (Called from %s)", error.c_str(), funcname.c_str());
 }
 
-void thread_generate_bcrypt(AMX* amx, unsigned short playerid, int threadid, std::string buffer, short cost)
+void thread_generate_bcrypt(unsigned short playerid, int threadid, std::string buffer, short cost)
 {
 	Botan::AutoSeeded_RNG rng;
 
 	std::string output_str = Botan::generate_bcrypt(buffer, rng, cost);
+
+	std::lock_guard<std::mutex> lock(bcrypt_queue_mutex);
 
 	// Add the result to the queue
 	bcrypt_queue.push_back({BCRYPT_QUEUE_HASH, playerid, threadid, output_str, false});
@@ -116,14 +119,14 @@ cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 	}
 
 	// Start a new thread
-	std::thread t(thread_generate_bcrypt, amx, playerid, threadid, password, cost);
+	std::thread t(thread_generate_bcrypt, playerid, threadid, password, cost);
 
 	// Leave the thread running
 	t.detach();
 	return 1;
 }
 
-void thread_check_bcrypt(AMX* amx, unsigned short playerid, int threadid, std::string password, std::string hash)
+void thread_check_bcrypt(unsigned short playerid, int threadid, std::string password, std::string hash)
 {
 	bool match;
 
@@ -134,6 +137,8 @@ void thread_check_bcrypt(AMX* amx, unsigned short playerid, int threadid, std::s
 	{
 		match = Botan::check_bcrypt(password, hash);
 	}
+
+	std::lock_guard<std::mutex> lock(bcrypt_queue_mutex);
 
 	// Add the result to the queue
 	bcrypt_queue.push_back({BCRYPT_QUEUE_CHECK, playerid, threadid, "", match});
@@ -186,7 +191,7 @@ cell AMX_NATIVE_CALL bcrypt_check(AMX* amx, cell* params)
 	}
 
 	// Start a new thread
-	std::thread t(thread_check_bcrypt, amx, playerid, threadid, password, hash);
+	std::thread t(thread_check_bcrypt, playerid, threadid, password, hash);
 
 	// Leave the thread running
 	t.detach();
@@ -230,6 +235,8 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 {
 	if(bcrypt_queue.size() > 0)
 	{
+		std::lock_guard<std::mutex> lock(bcrypt_queue_mutex);
+
 		int amx_idx;
 		for(std::vector<AMX*>::iterator a = p_Amx.begin(); a != p_Amx.end(); ++a)
 		{
@@ -273,10 +280,7 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 		}
 
 		// Clear the queue
-		for(std::vector<bcrypt_queue_item>::iterator t = bcrypt_queue.begin(); t != bcrypt_queue.end();)
-		{
-			bcrypt_queue.erase(t);
-		}
+		bcrypt_queue.clear();
 	}
 }
 
