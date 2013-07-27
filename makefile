@@ -18,9 +18,9 @@ bcrypt: clean
 	$(GCC) $(COMPILE_FLAGS) ./SDK/amx/*.c
 	$(GPP) $(COMPILE_FLAGS) ./SDK/*.cpp
 	$(GPP) $(COMPILE_FLAGS) ./*.cpp
-	$(GPP) -O2 -fshort-wchar -shared -ldl -o $(OUTFILE) *.o
+	$(GPP) -O2 -fshort-wchar -shared -ldl -lrt -o $(OUTFILE) *.o
 
 # You may use bcrypt_quick if you do not need to compile the Botan library
 bcrypt_quick:
 	$(GPP) $(COMPILE_FLAGS) ./main.cpp
-	$(GPP) -O2 -fshort-wchar -shared -ldl -o $(OUTFILE) *.o
+	$(GPP) -O2 -fshort-wchar -shared -ldl -lrt -o $(OUTFILE) *.o
