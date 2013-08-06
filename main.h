@@ -5,35 +5,35 @@ Copyright (c) Lassi R. 2013
 Based on Botan crypto library (http://botan.randombit.net/).
 
 Copyright (C) 1999-2013 Jack Lloyd
-              2001 Peter J Jones
-              2004-2007 Justin Karneges
-              2004 Vaclav Ovsik
-              2005 Matthew Gregan
-              2005-2006 Matt Johnston
-              2006 Luca Piccarreta
-              2007 Yves Jerschow
-              2007-2008 FlexSecure GmbH
-              2007-2008 Technische Universitat Darmstadt
-              2007-2008 Falko Strenzke
-              2007-2008 Martin Doering
-              2007 Manuel Hartl
-              2007 Christoph Ludwig
-              2007 Patrick Sona
-              2010 Olivier de Gaalon
-              2012 Vojtech Kral
-              2012 Markus Wanner
-              2013 Joel Low
+2001 Peter J Jones
+2004-2007 Justin Karneges
+2004 Vaclav Ovsik
+2005 Matthew Gregan
+2005-2006 Matt Johnston
+2006 Luca Piccarreta
+2007 Yves Jerschow
+2007-2008 FlexSecure GmbH
+2007-2008 Technische Universitat Darmstadt
+2007-2008 Falko Strenzke
+2007-2008 Martin Doering
+2007 Manuel Hartl
+2007 Christoph Ludwig
+2007 Patrick Sona
+2010 Olivier de Gaalon
+2012 Vojtech Kral
+2012 Markus Wanner
+2013 Joel Low
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions, and the following disclaimer.
+this list of conditions, and the following disclaimer.
 
 2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions, and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
+notice, this list of conditions, and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -48,6 +48,14 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 */
 
+#if defined(__LINUX__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+	#include "Botan\Linux\botan_all.h"
+#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+	#include "Botan\Windows\botan_all.h"
+#endif
+
+Botan::LibraryInitializer init;
+
 #include <thread>
 #include <vector>
 #include <mutex>
@@ -55,7 +63,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "SDK/amx/amx.h"
 #include "SDK/plugincommon.h"
 
-#include "botan_all.h"
 #include "bcrypt_queue.h"
 
 typedef void (*logprintf_t)(char* format, ...);

@@ -1,12 +1,14 @@
 //----------------------------------------------------------
 //
-//   SA:MP Multiplayer Modification For GTA:SA
-//   Copyright 2004-2006 SA:MP Team
+//   SA-MP Multiplayer Modification For GTA:SA
+//   Copyright 2004-2009 SA-MP Team
 //
 //----------------------------------------------------------
 
-#ifndef _PLUGINCOMMON_H_INCLUDED
-#define _PLUGINCOMMON_H_INCLUDED
+#pragma once
+
+namespace samp_sdk
+{
 
 //----------------------------------------------------------
 
@@ -20,7 +22,7 @@
   #define PLUGIN_EXTERN_C 
 #endif
 
-#if defined(LINUX) || defined(FREEBSD) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__LINUX__) || defined(__FreeBSD__) || defined(__OpenBSD__)
   #ifndef __GNUC__
     #pragma message "Warning: Not using a GNU compiler."
   #endif
@@ -48,6 +50,7 @@ enum SUPPORTS_FLAGS
 	SUPPORTS_VERSION		= SAMP_PLUGIN_VERSION,
 	SUPPORTS_VERSION_MASK	= 0xffff,
 	SUPPORTS_AMX_NATIVES	= 0x10000,
+	SUPPORTS_PROCESS_TICK	= 0x20000
 };
 
 //----------------------------------------------------------
@@ -115,8 +118,6 @@ enum PLUGIN_AMX_EXPORT
 };
 
 //----------------------------------------------------------
-
-#endif // _PLUGINCOMMON_H_INCLUDED
-
-//----------------------------------------------------------
 // EOF
+
+}

@@ -21,20 +21,26 @@
  *  Version: $Id: amx.h,v 1.5 2006/03/26 16:56:15 spookie Exp $
  */
 
-#if defined FREEBSD && !defined __FreeBSD__
-  #define __FreeBSD__
-#endif
-  #include <sclinux.h>
-#if defined LINUX || defined __FreeBSD__ || defined __OpenBSD__
-#endif
-
+namespace samp_sdk
+{
+ 
 #ifndef AMX_H_INCLUDED
 #define AMX_H_INCLUDED
+
+#if defined __linux || defined __linux__
+#define __LINUX__
+#endif
+#if defined FREEBSD && !defined __FreeBSD__
+#define __FreeBSD__
+#endif
+#if defined __LINUX__ || defined __FreeBSD__ || defined __OpenBSD__
+#include "sclinux.h"
+#endif
 
 #if defined HAVE_STDINT_H
   #include <stdint.h>
 #else
-  #if defined __LCC__ || defined __DMC__ || defined LINUX
+  #if defined __LCC__ || defined __DMC__ || defined __LINUX__ || (defined __WATCOMC__ && __WATCOMC__ >= 1200)
     #if defined HAVE_INTTYPES_H
       #include <inttypes.h>
     #else
@@ -82,11 +88,11 @@
 #if HAVE_ALLOCA_H
   #include <alloca.h>
 #endif
-#if defined __WIN32__ || defined _WIN32 || defined WIN32 /* || defined __MSDOS__ */
+/*#if defined __WIN32__ || defined _WIN32 || defined WIN32
   #if !defined alloca
-    #define alloca(n)   _alloca(n)
+    #define xalloca(n)   _alloca(n)
   #endif
-#endif
+#endif*/
 
 #if !defined arraysize
   #define arraysize(array)  (sizeof(array) / sizeof((array)[0]))
@@ -188,7 +194,7 @@ typedef int (AMXAPI *AMX_DEBUG)(struct tagAMX *amx);
 #endif
 
 #if !defined AMX_NO_ALIGN
-  #if defined LINUX || defined __FreeBSD__
+  #if defined __LINUX__ || defined __FreeBSD__
     #pragma pack(1)         /* structures must be packed (byte-aligned) */
   #elif defined MACOS && defined __MWERKS__
 	#pragma options align=mac68k
@@ -212,7 +218,7 @@ typedef struct tagAMX_NATIVE_INFO {
 
 typedef struct tagAMX_FUNCSTUB {
   ucell address         PACKED;
-  char name[sEXPMAX+1]  PACKED;
+  char name[sEXPMAX+1];
 } PACKED AMX_FUNCSTUB;
 
 typedef struct tagFUNCSTUBNT {
@@ -262,8 +268,8 @@ typedef struct tagAMX {
 typedef struct tagAMX_HEADER {
   int32_t size          PACKED; /* size of the "file" */
   uint16_t magic        PACKED; /* signature */
-  char    file_version  PACKED; /* file format version */
-  char    amx_version   PACKED; /* required version of the AMX */
+  char    file_version;         /* file format version */
+  char    amx_version;          /* required version of the AMX */
   int16_t flags         PACKED;
   int16_t defsize       PACKED; /* size of a definition record */
   int32_t cod           PACKED; /* initial value of COD - code block */
@@ -287,7 +293,8 @@ typedef struct tagAMX_HEADER {
   #define AMX_MAGIC     0xf1e1
 #endif
 
-enum {
+enum 
+{
   AMX_ERR_NONE,
   /* reserve the first 15 error codes for exit codes of the abstract machine */
   AMX_ERR_EXIT,         /* forced exit */
@@ -423,7 +430,7 @@ int AMXAPI amx_UTF8Put(char *string, char **endptr, int maxchars, cell value);
   amx_Register((amx), amx_NativeInfo((name),(func)), 1);
 
 #if !defined AMX_NO_ALIGN
-  #if defined LINUX || defined __FreeBSD__
+  #if defined __LINUX__ || defined __FreeBSD__
     #pragma pack()    /* reset default packing */
   #elif defined MACOS && defined __MWERKS__
     #pragma options align=reset
@@ -437,3 +444,5 @@ int AMXAPI amx_UTF8Put(char *string, char **endptr, int maxchars, cell value);
 #endif
 
 #endif /* AMX_H_INCLUDED */
+
+}
