@@ -15,7 +15,7 @@ clean:
 	-rm *~ *.o *.so
 
 bcrypt: clean
-	$(GCC) $(COMPILE_FLAGS) ./SDK/amx/*.c
+	$(GPP) $(COMPILE_FLAGS) ./Botan/Linux/*.cpp
 	$(GPP) $(COMPILE_FLAGS) ./SDK/*.cpp
 	$(GPP) $(COMPILE_FLAGS) ./*.cpp
 	$(GPP) -O2 -fshort-wchar -shared -ldl -lrt -o $(OUTFILE) *.o
