@@ -3,3 +3,7 @@
 *.depend
 *.layout
 bin/
+Debug/
+Release/
+bcrypt-samp.sdf
+bcrypt-samp.v12.suo
