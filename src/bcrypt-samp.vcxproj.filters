@@ -13,14 +13,14 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Botan">
-      <UniqueIdentifier>{7cd518eb-32c4-4796-994f-0ef5e126dcb9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="SDK">
       <UniqueIdentifier>{31790fed-003a-4714-96c5-5b452e6991dd}</UniqueIdentifier>
     </Filter>
     <Filter Include="SDK\amx">
       <UniqueIdentifier>{71dd7835-6d04-4907-a4b0-cd3698d8ec8f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="crypt_blowfish">
+      <UniqueIdentifier>{cac648ef-d2a1-49d1-93fa-e5c7bb17102c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -32,11 +32,20 @@
     <ClCompile Include="SDK\amxplugin.cpp">
       <Filter>SDK</Filter>
     </ClCompile>
-    <ClCompile Include="Botan\Windows\botan_all.cpp">
-      <Filter>Botan</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bcrypt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crypt_blowfish\crypt_blowfish.cpp">
+      <Filter>crypt_blowfish</Filter>
+    </ClCompile>
+    <ClCompile Include="crypt_blowfish\crypt_gensalt.cpp">
+      <Filter>crypt_blowfish</Filter>
+    </ClCompile>
+    <ClCompile Include="crypt_blowfish\wrapper.cpp">
+      <Filter>crypt_blowfish</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -49,17 +58,20 @@
     <ClInclude Include="SDK\amx\sclinux.h">
       <Filter>SDK\amx</Filter>
     </ClInclude>
-    <ClInclude Include="Botan\Windows\botan_all.h">
-      <Filter>Botan</Filter>
-    </ClInclude>
     <ClInclude Include="bcrypt_queue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="crypt_blowfish\ow-crypt.h">
+      <Filter>crypt_blowfish</Filter>
+    </ClInclude>
+    <ClInclude Include="bcrypt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="LICENSE.txt" />
+    <Text Include="..\LICENSE.txt" />
   </ItemGroup>
 </Project>

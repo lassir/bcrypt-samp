@@ -1,54 +1,9 @@
-/*
-Bcrypt plugin for SA-MP
-Copyright (c) Lassi R. 2013
-
-Based on Botan crypto library (http://botan.randombit.net/).
-
-Copyright (C) 1999-2013 Jack Lloyd
-2001 Peter J Jones
-2004-2007 Justin Karneges
-2004 Vaclav Ovsik
-2005 Matthew Gregan
-2005-2006 Matt Johnston
-2006 Luca Piccarreta
-2007 Yves Jerschow
-2007-2008 FlexSecure GmbH
-2007-2008 Technische Universitat Darmstadt
-2007-2008 Falko Strenzke
-2007-2008 Martin Doering
-2007 Manuel Hartl
-2007 Christoph Ludwig
-2007 Patrick Sona
-2010 Olivier de Gaalon
-2012 Vojtech Kral
-2012 Markus Wanner
-2013 Joel Low
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-this list of conditions, and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright
-notice, this list of conditions, and the following disclaimer in the
-documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-*/
+#include <thread>
+#include <vector>
+#include <mutex>
 
 #include "main.h"
+#include "bcrypt.h"
 
 using namespace samp_sdk;
 
@@ -65,22 +20,21 @@ void bcrypt_error(std::string funcname, std::string error)
 
 void thread_generate_bcrypt(int thread_idx, int thread_id, std::string buffer, short cost)
 {
-	// Process only one thread at once on Windows
-	#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-		std::lock_guard<std::mutex> lock(bcrypt_queue_mutex);
-	#endif
+	bcrypt *crypter = new bcrypt();
 
-	Botan::AutoSeeded_RNG rng;
+	crypter
+		->setCost(cost)
+		->setPrefix("2y")
+		->setKey(buffer);
 
-	std::string output_str = Botan::generate_bcrypt(buffer, rng, cost);
+	std::string hash = crypter->generate();
 
-	// Process all threads concurrently on Linux
-	#if defined(__LINUX__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-		std::lock_guard<std::mutex> lock(bcrypt_queue_mutex);
-	#endif
+	delete(crypter);
+
+	std::lock_guard<std::mutex> lock(bcrypt_queue_mutex);
 
 	// Add the result to the queue
-	bcrypt_queue.push_back({ BCRYPT_QUEUE_HASH, thread_idx, thread_id, output_str, false });
+	bcrypt_queue.push_back({ BCRYPT_QUEUE_HASH, thread_idx, thread_id, hash, false });
 }
 
 // native bcrypt_hash(thread_idx, thread_id, password[], cost);
@@ -133,14 +87,7 @@ cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 void thread_check_bcrypt(int thread_idx, int thread_id, std::string password, std::string hash)
 {
 	bool match;
-
-	// Hash cannot be valid if it's not 60 characters long
-	if (hash.length() != 60)
-		match = false;
-	else
-	{
-		match = Botan::check_bcrypt(password, hash);
-	}
+	match = bcrypt::compare(password, hash);
 
 	std::lock_guard<std::mutex> lock(bcrypt_queue_mutex);
 
@@ -212,13 +159,10 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
 	logprintf = (logprintf_t) ppData[PLUGIN_DATA_LOGPRINTF];
 
-	logprintf("");
-	logprintf(" ======================================== ");
-	logprintf("");
-	logprintf("  bcrypt for SA-MP was loaded");
-	logprintf("");
-	logprintf(" ======================================== ");
-	logprintf("");
+	unsigned max_threads = std::thread::hardware_concurrency();
+
+	logprintf("  plugin.bcrypt "BCRYPT_VERSION" was loaded.");
+	logprintf("  plugin.bcrypt: Concurred threads supported: %d", max_threads);
 	return true;
 }
 
@@ -226,13 +170,7 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 {
 	p_Amx.clear();
 
-	logprintf("");
-	logprintf(" ======================================== ");
-	logprintf("");
-	logprintf("  bcrypt for SA-MP was unloaded");
-	logprintf("");
-	logprintf(" ======================================== ");
-	logprintf("");
+	logprintf("plugin.bcrypt: Plugin unloaded.");
 }
 
 PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
@@ -291,7 +229,7 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 AMX_NATIVE_INFO PluginNatives [] =
 {
 	{"bcrypt_hash", bcrypt_hash},
-	{ "bcrypt_check", bcrypt_check },
+	{"bcrypt_check", bcrypt_check },
 	{ 0, 0 }
 };
 
