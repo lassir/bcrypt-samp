@@ -4,7 +4,7 @@ GPP = g++ -m32
 COMPILER_FLAGS = -c -O3 --std=c++11 -D _strdup=strdup
 LINKER_FLAGS = -O2 -fshort-wchar -shared -lpthread
 
-CRYPT_OBJECTS = crypt.o crypt_blowfish.o crypt_gensalt.o wrapper.o
+CRYPT_OBJECTS = crypt_blowfish.o crypt_gensalt.o wrapper.o
 OBJECTS = amxplugin.o $(CRYPT_OBJECTS) bcrypt.o plugin.o main.o
 
 bcrypt:
