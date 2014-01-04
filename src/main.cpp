@@ -15,23 +15,6 @@ void bcrypt_error(std::string funcname, std::string error)
 	plugin::get()->logprintf("bcrypt error: %s (Called from %s)", error.c_str(), funcname.c_str());
 }
 
-void thread_generate_bcrypt(int thread_idx, int thread_id, std::string buffer, short cost)
-{
-	bcrypt *crypter = new bcrypt();
-
-	crypter
-		->setCost(cost)
-		->setPrefix("2y")
-		->setKey(buffer);
-
-	std::string hash = crypter->generate();
-
-	delete(crypter);
-
-	// Add the result to the queue
-	plugin::get()->queue_result(E_QUEUE_HASH, thread_idx, thread_id, hash, false);
-}
-
 // native bcrypt_hash(thread_idx, thread_id, password[], cost);
 cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 {
@@ -71,21 +54,8 @@ cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 		delete [] buffer;
 	}
 
-	// Start a new thread
-	std::thread t(thread_generate_bcrypt, thread_idx, thread_id, password, cost);
-
-	// Leave the thread running
-	t.detach();
+	plugin::get()->queue_task(E_QUEUE_HASH, thread_idx, thread_id, password, cost);
 	return 1;
-}
-
-void thread_check_bcrypt(int thread_idx, int thread_id, std::string password, std::string hash)
-{
-	bool match;
-	match = bcrypt::compare(password, hash);
-
-	// Add the result to the queue
-	plugin::get()->queue_result(E_QUEUE_CHECK, thread_idx, thread_id, "", match);
 }
 
 // native bcrypt_check(thread_idx, thread_id, const password[], const hash[]);
@@ -134,11 +104,7 @@ cell AMX_NATIVE_CALL bcrypt_check(AMX* amx, cell* params)
 		delete [] buffer;
 	}
 
-	// Start a new thread
-	std::thread t(thread_check_bcrypt, thread_idx, thread_id, password, hash);
-
-	// Leave the thread running
-	t.detach();
+	plugin::get()->queue_task(E_QUEUE_CHECK, thread_idx, thread_id, password, hash);
 	return 1;
 }
 
@@ -163,6 +129,7 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 {
 	plugin::get()->process_result_queue();
+	plugin::get()->process_task_queue();
 }
 
 AMX_NATIVE_INFO PluginNatives [] =
