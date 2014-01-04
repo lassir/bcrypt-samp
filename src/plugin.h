@@ -59,6 +59,9 @@ public:
 	void plugin::add_amx(samp_sdk::AMX *amx);
 	void plugin::remove_amx(samp_sdk::AMX *amx);
 
+	void set_thread_limit(int value);
+	int get_thread_limit();
+
 	void queue_task(unsigned short type, int thread_idx, int thread_id, std::string key, unsigned short cost);
 	void queue_task(unsigned short type, int thread_idx, int thread_id, std::string key, std::string hash = "");
 	void queue_result(unsigned short type, int thread_idx, int thread_id, std::string hash, bool match);

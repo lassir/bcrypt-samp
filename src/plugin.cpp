@@ -21,14 +21,14 @@ void plugin::initialise(void **ppData)
 
 	instance->logprintf = (logprintf_t) ppData[samp_sdk::PLUGIN_DATA_LOGPRINTF];
 
-	unsigned max_threads = std::thread::hardware_concurrency();
-	instance->thread_limit = max_threads - 1;
+	int threads_supported = std::thread::hardware_concurrency();
+	instance->thread_limit = threads_supported - 1;
 
 	if (instance->thread_limit < 1)
 		instance->thread_limit = 1;
 
 	instance->logprintf("  plugin.bcrypt "BCRYPT_VERSION" was loaded.");
-	instance->logprintf("  plugin.bcrypt: %d cores found, %d concurrent threads will be used.", max_threads, instance->thread_limit);
+	instance->logprintf("  plugin.bcrypt: %d cores detected, %d concurrent threads will be used.", threads_supported, instance->thread_limit);
 }
 
 plugin *plugin::get()
@@ -44,6 +44,16 @@ void plugin::add_amx(samp_sdk::AMX *amx)
 void plugin::remove_amx(samp_sdk::AMX *amx)
 {
 	get()->amx_list.erase(amx);
+}
+
+void plugin::set_thread_limit(int value)
+{
+	this->thread_limit = value;
+}
+
+int plugin::get_thread_limit()
+{
+	return this->thread_limit;
 }
 
 void plugin::queue_task(unsigned short type, int thread_idx, int thread_id, std::string key, unsigned short cost)

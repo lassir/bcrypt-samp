@@ -108,6 +108,31 @@ cell AMX_NATIVE_CALL bcrypt_check(AMX* amx, cell* params)
 	return 1;
 }
 
+cell AMX_NATIVE_CALL bcrypt_set_thread_limit(AMX *amx, cell *params)
+{
+	if (params[0] != 1 * sizeof(cell))
+	{
+		plugin::get()->logprintf("plugin.bcrypt: The thread limit must be at least 1.");
+		return 0;
+	}
+
+	int thread_limit = (int) params[1];
+	int supported_threads = std::thread::hardware_concurrency();
+
+	if (thread_limit >= 1)
+	{
+		plugin::get()->set_thread_limit(thread_limit);
+		plugin::get()->logprintf("plugin.bcrypt: Thread limit set to %d (CPU cores: %d)", thread_limit, supported_threads);
+	}
+	else
+	{
+		plugin::get()->logprintf("plugin.bcrypt: The thread limit must be at least 1.");
+		return 0;
+	}
+
+	return 1;
+}
+
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
 {
 	return SUPPORTS_VERSION | SUPPORTS_PROCESS_TICK | SUPPORTS_AMX_NATIVES;
@@ -134,8 +159,9 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 
 AMX_NATIVE_INFO PluginNatives [] =
 {
-	{"bcrypt_hash", bcrypt_hash},
-	{"bcrypt_check", bcrypt_check },
+	{ "bcrypt_hash", bcrypt_hash },
+	{ "bcrypt_check", bcrypt_check },
+	{ "bcrypt_set_thread_limit", bcrypt_set_thread_limit },
 	{ 0, 0 }
 };
 
