@@ -1,4 +1,7 @@
 #include <thread>
+#include <iostream>
+#include <vector>
+#include <cstdarg>
 
 #include "plugin.h"
 #include "bcrypt.h"
@@ -12,14 +15,14 @@ plugin::plugin()
 
 plugin::~plugin()
 {
-	this->logprintf("plugin.bcrypt: Plugin unloaded.");
+	plugin::printf("plugin.bcrypt: Plugin unloaded.");
 }
 
 void plugin::initialise(void **ppData)
 {
 	instance = new plugin();
 
-	instance->logprintf = (logprintf_t) ppData[samp_sdk::PLUGIN_DATA_LOGPRINTF];
+	instance->logprintf = (plugin::logprintf_t) ppData[samp_sdk::PLUGIN_DATA_LOGPRINTF];
 
 	int threads_supported = std::thread::hardware_concurrency();
 	instance->thread_limit = threads_supported - 1;
@@ -27,8 +30,8 @@ void plugin::initialise(void **ppData)
 	if (instance->thread_limit < 1)
 		instance->thread_limit = 1;
 
-	instance->logprintf("  plugin.bcrypt "BCRYPT_VERSION" was loaded.");
-	instance->logprintf("  plugin.bcrypt: %d cores detected, %d concurrent threads will be used.", threads_supported, instance->thread_limit);
+	plugin::printf("  plugin.bcrypt " BCRYPT_VERSION " was loaded.");
+	plugin::printf("  plugin.bcrypt: %d cores detected, %d threads will be used.", threads_supported, instance->thread_limit);
 }
 
 plugin *plugin::get()
@@ -44,6 +47,19 @@ void plugin::add_amx(samp_sdk::AMX *amx)
 void plugin::remove_amx(samp_sdk::AMX *amx)
 {
 	get()->amx_list.erase(amx);
+}
+
+void plugin::printf(const char *format, ...)
+{
+	std::va_list arg_list;
+	va_start(arg_list, format);
+	
+	char short_buf[256];                   
+	vsnprintf(short_buf, sizeof(short_buf), format, arg_list);
+    
+    plugin::get()->logprintf((char *) short_buf);
+
+	va_end(arg_list);
 }
 
 void plugin::set_thread_limit(int value)
@@ -63,7 +79,7 @@ void plugin::queue_task(unsigned short type, int thread_idx, int thread_id, std:
 
 void plugin::queue_task(unsigned short type, int thread_idx, int thread_id, std::string key, std::string hash)
 {
-	this->task_queue.push({ type, thread_idx, thread_id, key, NULL, hash});
+	this->task_queue.push({ type, thread_idx, thread_id, key, 0, hash});
 }
 
 void plugin::queue_result(unsigned short type, int thread_idx, int thread_id, std::string hash, bool match)
@@ -163,7 +179,7 @@ void plugin::process_result_queue()
 					{
 						// Push the hash
 						cell addr;
-						amx_PushString(*a, &addr, NULL, (*t).hash.c_str(), NULL, NULL);
+						amx_PushString(*a, &addr, NULL, (*t).hash.c_str(), 0, 0);
 
 						// Push the thread_id and thread_idx
 						amx_Push(*a, (*t).thread_id);

@@ -34,10 +34,13 @@ struct s_result_queue
 
 class plugin
 {
-
+	typedef void (*logprintf_t)(char* format, ...);
+	
 private:
 	static plugin *instance;
 	std::set<samp_sdk::AMX *> amx_list;
+	
+	logprintf_t logprintf;
 
 	int thread_limit;
 	std::atomic<unsigned> active_threads;
@@ -46,18 +49,15 @@ private:
 	std::vector<s_result_queue> result_queue;
 	std::mutex result_queue_mutex;
 
-	void *pAMXFunctions;
-
 public:
 	static void initialise(void **ppData);
 	static plugin *get();
-	logprintf_t logprintf;
 
 	plugin();
 	~plugin();
-	
-	void plugin::add_amx(samp_sdk::AMX *amx);
-	void plugin::remove_amx(samp_sdk::AMX *amx);
+	static void printf(const char *format, ...);
+	void add_amx(samp_sdk::AMX *amx);
+	void remove_amx(samp_sdk::AMX *amx);
 
 	void set_thread_limit(int value);
 	int get_thread_limit();

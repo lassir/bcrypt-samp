@@ -10,18 +10,13 @@ using namespace samp_sdk;
 
 extern void *pAMXFunctions;
 
-void bcrypt_error(std::string funcname, std::string error)
-{
-	plugin::get()->logprintf("bcrypt error: %s (Called from %s)", error.c_str(), funcname.c_str());
-}
-
 // native bcrypt_hash(thread_idx, thread_id, password[], cost);
 cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 {
 	// Require 4 parameters
 	if (params[0] != 4 * sizeof(cell))
 	{
-		bcrypt_error("bcrypt_hash", "Incorrect number of parameters (4 required)");
+		plugin::printf("plugin.bcrypt: bcrypt_hash: Invalid number of parameters (expected 4)");
 		return 0;
 	}
 
@@ -32,13 +27,13 @@ cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 
 	if (cost < 4 || cost > 31)
 	{
-		bcrypt_error("bcrypt_hash", "Invalid work factor (cost). Allowed range: 4-31");
+		plugin::printf("plugin.bcrypt: bcrypt_hash: Invalid work factor (expected 4-31)");
 		return 0;
 	}
 
 	std::string password = "";
 
-	int len = NULL;
+	int len = 0;
 	cell *addr = NULL;
 
 	amx_GetAddr(amx, params[3], &addr);
@@ -64,7 +59,7 @@ cell AMX_NATIVE_CALL bcrypt_check(AMX* amx, cell* params)
 	// Require 4 parameters
 	if (params[0] != 4 * sizeof(cell))
 	{
-		bcrypt_error("bcrypt_check", "Incorrect number of parameters (4 required)");
+		plugin::printf("plugin.bcrypt: bcrypt_check: Invalid number of parameters (expected 4)");
 		return 0;
 	}
 
@@ -75,8 +70,8 @@ cell AMX_NATIVE_CALL bcrypt_check(AMX* amx, cell* params)
 	std::string password = "";
 	std::string hash = "";
 
-	int len[2] = { NULL };
-	cell *addr[2] = { NULL };
+	int len[2] = { 0, 0 };
+	cell *addr[2] = { NULL, NULL };
 
 	amx_GetAddr(amx, params[3], &addr[0]);
 	amx_StrLen(addr[0], &len[0]);
@@ -112,7 +107,7 @@ cell AMX_NATIVE_CALL bcrypt_set_thread_limit(AMX *amx, cell *params)
 {
 	if (params[0] != 1 * sizeof(cell))
 	{
-		plugin::get()->logprintf("plugin.bcrypt: The thread limit must be at least 1.");
+		plugin::printf("plugin.bcrypt: The thread limit must be at least 1.");
 		return 0;
 	}
 
@@ -122,11 +117,12 @@ cell AMX_NATIVE_CALL bcrypt_set_thread_limit(AMX *amx, cell *params)
 	if (thread_limit >= 1)
 	{
 		plugin::get()->set_thread_limit(thread_limit);
-		plugin::get()->logprintf("plugin.bcrypt: Thread limit set to %d (CPU cores: %d)", thread_limit, supported_threads);
+	
+		plugin::printf("plugin.bcrypt: Thread limit set to %d (CPU cores: %d)", thread_limit, supported_threads);
 	}
 	else
 	{
-		plugin::get()->logprintf("plugin.bcrypt: The thread limit must be at least 1.");
+		plugin::printf("plugin.bcrypt: The thread limit must be at least 1.");
 		return 0;
 	}
 
