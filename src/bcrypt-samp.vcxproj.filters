@@ -47,6 +47,9 @@
     <ClCompile Include="crypt_blowfish\wrapper.cpp">
       <Filter>crypt_blowfish</Filter>
     </ClCompile>
+    <ClCompile Include="plugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SDK\plugincommon.h">
@@ -58,9 +61,6 @@
     <ClInclude Include="SDK\amx\sclinux.h">
       <Filter>SDK\amx</Filter>
     </ClInclude>
-    <ClInclude Include="bcrypt_queue.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -68,6 +68,9 @@
       <Filter>crypt_blowfish</Filter>
     </ClInclude>
     <ClInclude Include="bcrypt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="plugin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

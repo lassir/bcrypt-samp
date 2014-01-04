@@ -83,13 +83,14 @@
     <ClCompile Include="crypt_blowfish\wrapper.cpp" />
     <ClCompile Include="bcrypt.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="plugin.cpp" />
     <ClCompile Include="SDK\amxplugin.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="bcrypt_queue.h" />
     <ClInclude Include="crypt_blowfish\ow-crypt.h" />
     <ClInclude Include="bcrypt.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="plugin.h" />
     <ClInclude Include="SDK\amx\amx.h" />
     <ClInclude Include="SDK\amx\sclinux.h" />
     <ClInclude Include="SDK\plugincommon.h" />
