@@ -1,6 +1,4 @@
 #include <thread>
-#include <vector>
-#include <mutex>
 
 #include "main.h"
 #include "plugin.h"

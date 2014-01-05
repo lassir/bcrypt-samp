@@ -41,12 +41,12 @@ plugin *plugin::get()
 
 void plugin::add_amx(samp_sdk::AMX *amx)
 {
-	get()->amx_list.insert(amx);
+	this->amx_list.insert(amx);
 }
 
 void plugin::remove_amx(samp_sdk::AMX *amx)
 {
-	get()->amx_list.erase(amx);
+	this->amx_list.erase(amx);
 }
 
 void plugin::printf(const char *format, ...)
@@ -86,7 +86,7 @@ void plugin::queue_result(unsigned short type, int thread_idx, int thread_id, st
 {
 	std::lock_guard<std::mutex> lock(plugin::result_queue_mutex);
 
-	this->result_queue.push_back({ type, thread_idx, thread_id, hash, match });
+	this->result_queue.push({ type, thread_idx, thread_id, hash, match });
 	this->active_threads--;
 }
 
@@ -126,30 +126,28 @@ void plugin::process_task_queue()
 			{
 			case E_QUEUE_HASH:
 			{
-								 // Start a new thread
-								 this->active_threads++;
+				// Start a new thread
+				this->active_threads++;
 
-								 std::thread t(thread_generate_bcrypt, this->task_queue.front().thread_idx, this->task_queue.front().thread_id, this->task_queue.front().key, this->task_queue.front().cost);
-								 t.detach();
-
-								 this->task_queue.pop();
-								 break;
+				std::thread t(thread_generate_bcrypt, this->task_queue.front().thread_idx, this->task_queue.front().thread_id, this->task_queue.front().key, this->task_queue.front().cost);
+				t.detach();	
+				break;
 			}
 			case E_QUEUE_CHECK:
 			{
-								  // Start a new thread
-								  this->active_threads++;
+				// Start a new thread
+				this->active_threads++;
 
-								  std::thread t(thread_check_bcrypt, this->task_queue.front().thread_idx, this->task_queue.front().thread_id, this->task_queue.front().key, this->task_queue.front().hash);
-								  t.detach();
-
-								  this->task_queue.pop();
-								  break;
+				std::thread t(thread_check_bcrypt, this->task_queue.front().thread_idx, this->task_queue.front().thread_id, this->task_queue.front().key, this->task_queue.front().hash);
+				t.detach();
+				break;
 			}
 
 			default:
 				break;
 			}
+
+			this->task_queue.pop();
 		}
 		else
 		{
@@ -162,53 +160,50 @@ void plugin::process_result_queue()
 {
 	using namespace samp_sdk;
 
-	if (this->result_queue.size() > 0)
-	{
-		std::lock_guard<std::mutex> lock(plugin::result_queue_mutex);
+	std::lock_guard<std::mutex> lock(plugin::result_queue_mutex);
 
-		int amx_idx;
+	while (!this->result_queue.empty())
+	{
 		for (std::set<AMX *>::iterator a = this->amx_list.begin(); a != this->amx_list.end(); ++a)
 		{
-			for (std::vector<s_result_queue>::iterator t = this->result_queue.begin(); t != this->result_queue.end(); ++t)
+			int amx_idx;
+
+			if (this->result_queue.front().type == E_QUEUE_HASH)
 			{
-				if ((*t).type == E_QUEUE_HASH)
+				// public OnBcryptHashed(thread_idx, thread_id, const hash[]);
+
+				if (!amx_FindPublic(*a, "OnBcryptHashed", &amx_idx))
 				{
-					// public OnBcryptHashed(thread_idx, thread_id, const hash[]);
+					// Push the hash
+					cell addr;
+					amx_PushString(*a, &addr, NULL, this->result_queue.front().hash.c_str(), 0, 0);
 
-					if (!amx_FindPublic(*a, "OnBcryptHashed", &amx_idx))
-					{
-						// Push the hash
-						cell addr;
-						amx_PushString(*a, &addr, NULL, (*t).hash.c_str(), 0, 0);
+					// Push the thread_id and thread_idx
+					amx_Push(*a, this->result_queue.front().thread_id);
+					amx_Push(*a, this->result_queue.front().thread_idx);
 
-						// Push the thread_id and thread_idx
-						amx_Push(*a, (*t).thread_id);
-						amx_Push(*a, (*t).thread_idx);
-
-						// Execute and release memory
-						amx_Exec(*a, NULL, amx_idx);
-						amx_Release(*a, addr);
-					}
+					// Execute and release memory
+					amx_Exec(*a, NULL, amx_idx);
+					amx_Release(*a, addr);
 				}
-				else if ((*t).type == E_QUEUE_CHECK)
+			}
+			else if (this->result_queue.front().type == E_QUEUE_CHECK)
+			{
+				// public OnBcryptChecked(thread_idx, thread_id, bool:match);
+
+				if (!amx_FindPublic(*a, "OnBcryptChecked", &amx_idx))
 				{
-					// public OnBcryptChecked(thread_idx, thread_id, bool:match);
+					// Push the thread_id and thread_idx
+					amx_Push(*a, this->result_queue.front().match);
+					amx_Push(*a, this->result_queue.front().thread_id);
+					amx_Push(*a, this->result_queue.front().thread_idx);
 
-					if (!amx_FindPublic(*a, "OnBcryptChecked", &amx_idx))
-					{
-						// Push the thread_id and thread_idx
-						amx_Push(*a, (*t).match);
-						amx_Push(*a, (*t).thread_id);
-						amx_Push(*a, (*t).thread_idx);
-
-						// Execute and release memory
-						amx_Exec(*a, NULL, amx_idx);
-					}
+					// Execute and release memory
+					amx_Exec(*a, NULL, amx_idx);
 				}
 			}
 		}
 
-		// Clear the queue
-		this->result_queue.clear();
+		this->result_queue.pop();
 	}
 }

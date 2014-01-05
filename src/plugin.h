@@ -1,4 +1,3 @@
-#include <vector>
 #include <set>
 #include <string>
 #include <mutex>
@@ -46,7 +45,7 @@ private:
 	std::atomic<unsigned> active_threads;
 
 	std::queue<s_task_queue> task_queue;
-	std::vector<s_result_queue> result_queue;
+	std::queue<s_result_queue> result_queue;
 	std::mutex result_queue_mutex;
 
 public:
@@ -55,6 +54,7 @@ public:
 
 	plugin();
 	~plugin();
+
 	static void printf(const char *format, ...);
 	void add_amx(samp_sdk::AMX *amx);
 	void remove_amx(samp_sdk::AMX *amx);
