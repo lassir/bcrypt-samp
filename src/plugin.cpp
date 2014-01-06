@@ -180,11 +180,11 @@ void plugin::process_result_queue()
 
 	while (!this->result_queue.empty())
 	{
-		this->result_queue.front().cb->exec();
-		delete(this->result_queue.front().cb);
-
 		this->active_result.hash = this->result_queue.front().hash;
 		this->active_result.match = this->result_queue.front().match;
+		
+		this->result_queue.front().cb->exec();
+		delete(this->result_queue.front().cb);
 
 		this->result_queue.pop();
 	}
