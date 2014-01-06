@@ -59,10 +59,10 @@ void plugin::printf(const char *format, ...)
 {
 	std::va_list arg_list;
 	va_start(arg_list, format);
-	
-	char short_buf[256];                   
+
+	char short_buf[256];
 	vsnprintf(short_buf, sizeof(short_buf), format, arg_list);
-    
+
     plugin::get()->logprintf((char *) short_buf);
 
 	va_end(arg_list);
@@ -78,21 +78,21 @@ int plugin::get_thread_limit()
 	return this->thread_limit;
 }
 
-void plugin::queue_task(unsigned short type, std::string key, unsigned short cost, callback *callback)
+void plugin::queue_task(unsigned short type, std::string key, unsigned short cost, callback *cb)
 {
-	this->task_queue.push({ type, key, cost, "", callback });
+	this->task_queue.push({ type, key, cost, "", cb });
 }
 
-void plugin::queue_task(unsigned short type, std::string key, std::string hash, callback *callback)
+void plugin::queue_task(unsigned short type, std::string key, std::string hash, callback *cb)
 {
-	this->task_queue.push({ type, key, 0, hash, callback });
+	this->task_queue.push({ type, key, 0, hash, cb });
 }
 
-void plugin::queue_result(unsigned short type, std::string hash, bool match, callback *callback)
+void plugin::queue_result(unsigned short type, std::string hash, bool match, callback *cb)
 {
 	std::lock_guard<std::mutex> lock(plugin::result_queue_mutex);
 
-	this->result_queue.push({ type, hash, match, callback });
+	this->result_queue.push({ type, hash, match, cb });
 	this->active_threads--;
 }
 
@@ -106,7 +106,7 @@ std::string plugin::get_active_hash()
 	return plugin::get()->active_result.hash;
 }
 
-void thread_generate_bcrypt(callback *callback, std::string buffer, short cost)
+void thread_generate_bcrypt(callback *cb, std::string buffer, short cost)
 {
 	bcrypt *crypter = new bcrypt();
 
@@ -120,16 +120,16 @@ void thread_generate_bcrypt(callback *callback, std::string buffer, short cost)
 	delete(crypter);
 
 	// Add the result to the queue
-	plugin::get()->queue_result(E_QUEUE_HASH, hash, false, callback);
+	plugin::get()->queue_result(E_QUEUE_HASH, hash, false, cb);
 }
 
-void thread_check_bcrypt(callback *callback, std::string password, std::string hash)
+void thread_check_bcrypt(callback *cb, std::string password, std::string hash)
 {
 	bool match;
 	match = bcrypt::compare(password, hash);
 
 	// Add the result to the queue
-	plugin::get()->queue_result(E_QUEUE_CHECK, std::string(), match, callback);
+	plugin::get()->queue_result(E_QUEUE_CHECK, std::string(), match, cb);
 }
 
 void plugin::process_task_queue()
@@ -145,8 +145,8 @@ void plugin::process_task_queue()
 				// Start a new thread
 				this->active_threads++;
 
-				std::thread t(thread_generate_bcrypt, this->task_queue.front().callback, this->task_queue.front().key, this->task_queue.front().cost);
-				t.detach();	
+				std::thread t(thread_generate_bcrypt, this->task_queue.front().cb, this->task_queue.front().key, this->task_queue.front().cost);
+				t.detach();
 				break;
 			}
 			case E_QUEUE_CHECK:
@@ -154,7 +154,7 @@ void plugin::process_task_queue()
 				// Start a new thread
 				this->active_threads++;
 
-				std::thread t(thread_check_bcrypt, this->task_queue.front().callback, this->task_queue.front().key, this->task_queue.front().hash);
+				std::thread t(thread_check_bcrypt, this->task_queue.front().cb, this->task_queue.front().key, this->task_queue.front().hash);
 				t.detach();
 				break;
 			}
@@ -180,8 +180,8 @@ void plugin::process_result_queue()
 
 	while (!this->result_queue.empty())
 	{
-		this->result_queue.front().callback->exec();
-		delete(this->result_queue.front().callback);
+		this->result_queue.front().cb->exec();
+		delete(this->result_queue.front().cb);
 
 		this->active_result.hash = this->result_queue.front().hash;
 		this->active_result.match = this->result_queue.front().match;

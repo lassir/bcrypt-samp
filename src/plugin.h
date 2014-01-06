@@ -22,7 +22,7 @@ struct s_task_queue
 	std::string key;
 	unsigned short cost;
 	std::string hash;
-	callback *callback;
+	callback *cb;
 };
 
 struct s_result_queue
@@ -30,17 +30,17 @@ struct s_result_queue
 	unsigned short type;
 	std::string hash;
 	bool match;
-	callback *callback;
+	callback *cb;
 };
 
 class plugin
 {
 	typedef void (*logprintf_t)(char* format, ...);
-	
+
 private:
 	static plugin *instance;
 	std::set<samp_sdk::AMX *> amx_list;
-	
+
 	logprintf_t logprintf;
 
 	unsigned thread_limit;
@@ -71,9 +71,9 @@ public:
 	void set_thread_limit(unsigned value);
 	int get_thread_limit();
 
-	void queue_task(unsigned short type, std::string key, unsigned short cost, callback *callback);
-	void queue_task(unsigned short type, std::string key, std::string hash, callback *callback);
-	void queue_result(unsigned short type, std::string hash, bool match, callback *callback);
+	void queue_task(unsigned short type, std::string key, unsigned short cost, callback *cb);
+	void queue_task(unsigned short type, std::string key, std::string hash, callback *cb);
+	void queue_result(unsigned short type, std::string hash, bool match, callback *cb);
 
 	void process_task_queue();
 	void process_result_queue();

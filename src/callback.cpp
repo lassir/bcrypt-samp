@@ -88,7 +88,7 @@ void callback::exec()
 					cell tmp_addr;
 					amx_PushString((*amx), &tmp_addr, NULL, boost::get<std::string>(param).c_str(), 0, 0);
 
-					if (amx_addr < NULL)
+					if (amx_addr < 0)
 						amx_addr = tmp_addr;
 				}
 			}
@@ -96,7 +96,7 @@ void callback::exec()
 			cell amx_ret;
 			amx_Exec((*amx), &amx_ret, amx_idx);
 
-			if (amx_addr >= NULL)
+			if (amx_addr >= 0)
 				amx_Release((*amx), amx_addr);
 		}
 	}
