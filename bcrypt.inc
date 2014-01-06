@@ -27,9 +27,8 @@
 
 #define BCRYPT_HASH_LENGTH 61
 
-native bcrypt_hash(thread_idx, thread_id, password[], cost = 12);
-native bcrypt_check(thread_idx, thread_id, password[], hash[]);
+native bcrypt_hash(key[], cost = 12, callback_name[], callback_format[] = "", {Float, _}:...);
+native bcrypt_check(password[], hash[], callback_name[], callback_format[] = "", {Float, _}:...);
+native bcrypt_get_hash(dest[]);
+native bool:bcrypt_is_equal();
 native bcrypt_set_thread_limit(value);
-	 
-forward OnBcryptHashed(thread_idx, thread_id, const hash[]);
-forward OnBcryptChecked(thread_idx, thread_id, bool:match);

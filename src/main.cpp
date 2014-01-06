@@ -3,25 +3,22 @@
 #include "main.h"
 #include "plugin.h"
 #include "bcrypt.h"
+#include "callback.h"
 
 using namespace samp_sdk;
 
 extern void *pAMXFunctions;
 
-// native bcrypt_hash(thread_idx, thread_id, password[], cost);
+// native bcrypt_hash(key[], cost, callback_name[], callback_format[], {Float, _}:...);
 cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 {
-	// Require 4 parameters
-	if (params[0] != 4 * sizeof(cell))
+	if (params[0] < 3 * sizeof(cell))
 	{
-		plugin::printf("plugin.bcrypt: bcrypt_hash: Invalid number of parameters (expected 4)");
+		plugin::printf("plugin.bcrypt: bcrypt_hash: Too few parameters (3 required)");
 		return 0;
 	}
 
-	// Get the parameters
-	int thread_idx = (int) params[1];
-	int thread_id = (int) params[2];
-	unsigned short cost = (unsigned short) params[4];
+	unsigned short cost = (unsigned short) params[2];
 
 	if (cost < 4 || cost > 31)
 	{
@@ -29,76 +26,78 @@ cell AMX_NATIVE_CALL bcrypt_hash(AMX* amx, cell* params)
 		return 0;
 	}
 
-	std::string password = "";
+	char
+		*key = NULL,
+		*callback_name = NULL,
+		*callback_format = NULL;
 
-	int len = 0;
-	cell *addr = NULL;
+	amx_StrParam(amx, params[1], key);
+	amx_StrParam(amx, params[3], callback_name);
+	amx_StrParam(amx, params[4], callback_format);
 
-	amx_GetAddr(amx, params[3], &addr);
-	amx_StrLen(addr, &len);
+	if (key == NULL || callback_name == NULL)
+		return 0;
 
-	if (len++)
-	{
-		char *buffer = new char[len];
-		amx_GetString(buffer, addr, 0, len);
+	callback *cb = new callback();
 
-		password = std::string(buffer);
-
-		delete [] buffer;
-	}
-
-	plugin::get()->queue_task(E_QUEUE_HASH, thread_idx, thread_id, password, cost);
+	cb->setName(callback_name);
+	cb->addFromFormat(amx, callback_format, params, 4);
+	
+	plugin::get()->queue_task(E_QUEUE_HASH, key, cost, cb);
 	return 1;
 }
 
 // native bcrypt_check(thread_idx, thread_id, const password[], const hash[]);
 cell AMX_NATIVE_CALL bcrypt_check(AMX* amx, cell* params)
 {
-	// Require 4 parameters
-	if (params[0] != 4 * sizeof(cell))
+	if (params[0] < 3 * sizeof(cell))
 	{
-		plugin::printf("plugin.bcrypt: bcrypt_check: Invalid number of parameters (expected 4)");
+		plugin::printf("plugin.bcrypt: bcrypt_check: Too few parameters (3 required)");
 		return 0;
 	}
 
-	// Get the parameters
-	int thread_idx = (int) params[1];
-	int thread_id = (int) params[2];
+	char
+		*key = NULL,
+		*hash = NULL,
+		*callback_name = NULL,
+		*callback_format = NULL;
 
-	std::string password = "";
-	std::string hash = "";
+	amx_StrParam(amx, params[1], key);
+	amx_StrParam(amx, params[2], hash);
+	amx_StrParam(amx, params[3], callback_name);
+	amx_StrParam(amx, params[4], callback_format);
 
-	int len[2] = { 0, 0 };
-	cell *addr[2] = { NULL, NULL };
+	if (key == NULL || hash == NULL || callback_name == NULL)
+		return 0;
 
-	amx_GetAddr(amx, params[3], &addr[0]);
-	amx_StrLen(addr[0], &len[0]);
+	callback *cb = new callback();
 
-	amx_GetAddr(amx, params[4], &addr[1]);
-	amx_StrLen(addr[1], &len[1]);
+	cb->setName(callback_name);
+	cb->addFromFormat(amx, callback_format, params, 4);
 
-	if (len[0]++)
-	{
-		char *buffer = new char[len[0]];
-		amx_GetString(buffer, addr[0], 0, len[0]);
-
-		password = std::string(buffer);
-
-		delete [] buffer;
-	}
-
-	if (len[1]++)
-	{
-		char *buffer = new char[len[1]];
-		amx_GetString(buffer, addr[1], 0, len[1]);
-
-		hash = std::string(buffer);
-
-		delete [] buffer;
-	}
-
-	plugin::get()->queue_task(E_QUEUE_CHECK, thread_idx, thread_id, password, hash);
+	plugin::get()->queue_task(E_QUEUE_CHECK, key, hash, cb);
 	return 1;
+}
+
+// native bcrypt_get_hash(destination[]);
+cell AMX_NATIVE_CALL bcrypt_get_hash(AMX *amx, cell *params)
+{
+	if (params[0] != sizeof(cell))
+	{
+		plugin::printf("plugin.bcrypt: bcrypt_get_hash: Invalid number of parameters (1 expected)");
+		return 0;
+	}
+
+	cell *amx_dest_addr = NULL;
+	amx_GetAddr(amx, params[1], &amx_dest_addr);
+	amx_SetString(amx_dest_addr, plugin::get_active_hash().c_str(), 0, 0, 61);
+	return 1;
+}
+
+// native bool:bcrypt_is_equal(destination[]);
+cell AMX_NATIVE_CALL bcrypt_is_equal(AMX *amx, cell *params)
+{
+	return (int)plugin::get()->get_active_match();
 }
 
 cell AMX_NATIVE_CALL bcrypt_set_thread_limit(AMX *amx, cell *params)
@@ -109,8 +108,8 @@ cell AMX_NATIVE_CALL bcrypt_set_thread_limit(AMX *amx, cell *params)
 		return 0;
 	}
 
-	int thread_limit = (int) params[1];
-	int supported_threads = std::thread::hardware_concurrency();
+	unsigned thread_limit = (int) params[1];
+	unsigned supported_threads = std::thread::hardware_concurrency();
 
 	if (thread_limit >= 1)
 	{
@@ -155,6 +154,8 @@ AMX_NATIVE_INFO PluginNatives [] =
 {
 	{ "bcrypt_hash", bcrypt_hash },
 	{ "bcrypt_check", bcrypt_check },
+	{ "bcrypt_get_hash", bcrypt_get_hash },
+	{ "bcrypt_is_equal", bcrypt_is_equal },
 	{ "bcrypt_set_thread_limit", bcrypt_set_thread_limit },
 	{ 0, 0 }
 };
