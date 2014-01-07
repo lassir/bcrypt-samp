@@ -65,7 +65,7 @@ std::string bcrypt::generate()
 	}
 
 	char settings[CRYPT_GENSALT_OUTPUT_SIZE];
-	crypt_gensalt_rn(this->prefix.c_str(), this->cost, salt.c_str(), salt.length(), settings, 30);
+	crypt_gensalt_rn(this->prefix.c_str(), this->cost, salt.c_str(), salt.length(), settings, CRYPT_GENSALT_OUTPUT_SIZE);
 
 	// Use crypt_ra to ensure thread safety
 	void *data = NULL;

@@ -1,4 +1,4 @@
-OUTFILE = bcrypt.so
+OUTFILE = bcrypt-samp.so
 
 GPP = g++ -m32
 COMPILER_FLAGS = -c -O3 --std=c++11 -D _strdup=strdup

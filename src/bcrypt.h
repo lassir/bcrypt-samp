@@ -1,3 +1,6 @@
+#ifndef BCRYPT_H
+#define BCRYPT_H
+
 #include <string>
 
 class bcrypt
@@ -17,3 +20,5 @@ public:
 	std::string generate();
 	static bool compare(std::string key, std::string hash);
 };
+
+#endif

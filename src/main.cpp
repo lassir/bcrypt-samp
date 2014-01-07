@@ -2,8 +2,6 @@
 
 #include "main.h"
 #include "plugin.h"
-#include "bcrypt.h"
-#include "callback.h"
 
 using namespace samp_sdk;
 
@@ -100,6 +98,7 @@ cell AMX_NATIVE_CALL bcrypt_is_equal(AMX *amx, cell *params)
 	return (int)plugin::get()->get_active_match();
 }
 
+// native bcrypt_set_thread_limit(value);
 cell AMX_NATIVE_CALL bcrypt_set_thread_limit(AMX *amx, cell *params)
 {
 	if (params[0] != 1 * sizeof(cell))

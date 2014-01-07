@@ -12,7 +12,6 @@ class callback
 
 public:
 	callback();
-	~callback();
 
 	void setName(std::string name);
 	void addFromFormat(samp_sdk::AMX *amx, const char *format, samp_sdk::cell *params, unsigned int param_offset);

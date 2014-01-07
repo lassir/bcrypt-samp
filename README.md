@@ -43,7 +43,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     {
         case DIALOG_REGISTRATION:
         {
-            bcrypt_hash(playerid, BCRYPT_REGISTRATION, inputtext);
 			bcrypt_hash(inputtext, BCRYPT_COST, "OnPasswordHashed", "d", playerid);
         }
 

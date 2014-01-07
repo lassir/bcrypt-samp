@@ -8,11 +8,6 @@ callback::callback()
 
 }
 
-callback::~callback()
-{
-
-}
-
 void callback::setName(std::string name)
 {
 	this->name = name;
