@@ -15,7 +15,6 @@ plugin::plugin()
 
 plugin::~plugin()
 {
-	delete(this->instance);
 	plugin::printf("plugin.bcrypt: Plugin unloaded.");
 }
 
