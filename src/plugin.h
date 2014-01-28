@@ -44,7 +44,7 @@ private:
 	logprintf_t logprintf;
 
 	unsigned thread_limit;
-	std::atomic<unsigned> active_threads;
+	std::atomic<unsigned int> active_threads;
 
 	std::queue<s_task_queue> task_queue;
 	std::queue<s_result_queue> result_queue;
