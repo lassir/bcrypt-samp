@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdarg>
 
+#include "main.h"
 #include "plugin.h"
 #include "bcrypt.h"
 
@@ -20,6 +21,8 @@ plugin::~plugin()
 
 void plugin::initialise(void **ppData)
 {
+	pAMXFunctions = ppData[samp_sdk::PLUGIN_DATA_AMX_EXPORTS];
+
 	instance = new plugin();
 
 	instance->logprintf = (plugin::logprintf_t) ppData[samp_sdk::PLUGIN_DATA_LOGPRINTF];

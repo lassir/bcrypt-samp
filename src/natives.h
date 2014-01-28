@@ -6,7 +6,7 @@
 #define DECLARE_NATIVE(function) \
 	cell AMX_NATIVE_CALL function(AMX *amx, cell *params)
 
-#define AMX_DEFINE_NATIVE(function) \
+#define DEFINE_NATIVE(function) \
 	{ #function, native::function },
 
 namespace native 

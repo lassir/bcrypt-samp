@@ -1,7 +1,7 @@
 #include <thread>
 
-#include "natives.h"
 #include "plugin.h"
+#include "natives.h"
 
 using namespace native;
 

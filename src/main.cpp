@@ -3,17 +3,19 @@
 #include "natives.h"
 
 using namespace samp_sdk;
-extern void *pAMXFunctions;
 
-PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
+AMX_NATIVE_INFO PluginNatives [] =
 {
-	return SUPPORTS_VERSION | SUPPORTS_PROCESS_TICK | SUPPORTS_AMX_NATIVES;
-}
+	DEFINE_NATIVE(bcrypt_hash)
+	DEFINE_NATIVE(bcrypt_check)
+	DEFINE_NATIVE(bcrypt_get_hash)
+	DEFINE_NATIVE(bcrypt_is_equal)
+	DEFINE_NATIVE(bcrypt_set_thread_limit)
+	{ 0, 0 }
+};
 
 PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 {
-	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
-
 	plugin::initialise(ppData);
 	return true;
 }
@@ -22,22 +24,6 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 {
 	delete(plugin::get());
 }
-
-PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
-{
-	plugin::get()->process_result_queue();
-	plugin::get()->process_task_queue();
-}
-
-AMX_NATIVE_INFO PluginNatives [] =
-{
-	AMX_DEFINE_NATIVE(bcrypt_hash)
-	AMX_DEFINE_NATIVE(bcrypt_check)
-	AMX_DEFINE_NATIVE(bcrypt_get_hash)
-	AMX_DEFINE_NATIVE(bcrypt_is_equal)
-	AMX_DEFINE_NATIVE(bcrypt_set_thread_limit)
-	{ 0, 0 }
-};
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx)
 {
@@ -49,4 +35,15 @@ PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX *amx)
 {
 	plugin::get()->remove_amx(amx);
 	return AMX_ERR_NONE;
+}
+
+PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
+{
+	plugin::get()->process_result_queue();
+	plugin::get()->process_task_queue();
+}
+
+PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
+{
+	return SUPPORTS_VERSION | SUPPORTS_PROCESS_TICK | SUPPORTS_AMX_NATIVES;
 }

@@ -33,6 +33,8 @@ struct s_result_queue
 	callback *cb;
 };
 
+extern void *pAMXFunctions;
+
 class plugin
 {
 	typedef void (*logprintf_t)(char* format, ...);
