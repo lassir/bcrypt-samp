@@ -31,7 +31,7 @@ DECLARE_NATIVE(native::bcrypt_hash)
 	amx_StrParam(amx, params[3], callback_name);
 	amx_StrParam(amx, params[4], callback_format);
 
-	if (key == NULL || callback_name == NULL)
+	if (callback_name == NULL)
 		return 0;
 
 	callback *cb = new callback();
@@ -39,7 +39,7 @@ DECLARE_NATIVE(native::bcrypt_hash)
 	cb->setName(callback_name);
 	cb->addFromFormat(amx, callback_format, params, 4);
 
-	plugin::get()->queue_task(E_QUEUE_HASH, key, cost, cb);
+	plugin::get()->queue_task(E_QUEUE_HASH, (key != NULL ? key : std::string()), cost, cb);
 	return 1;
 }
 
@@ -63,7 +63,7 @@ DECLARE_NATIVE(native::bcrypt_check)
 	amx_StrParam(amx, params[3], callback_name);
 	amx_StrParam(amx, params[4], callback_format);
 
-	if (key == NULL || hash == NULL || callback_name == NULL)
+	if (callback_name == NULL)
 		return 0;
 
 	callback *cb = new callback();
@@ -71,7 +71,7 @@ DECLARE_NATIVE(native::bcrypt_check)
 	cb->setName(callback_name);
 	cb->addFromFormat(amx, callback_format, params, 4);
 
-	plugin::get()->queue_task(E_QUEUE_CHECK, key, hash, cb);
+	plugin::get()->queue_task(E_QUEUE_CHECK, (key != NULL ? key : std::string()), (hash != NULL ? hash : std::string()), cb);
 	return 1;
 }
 
