@@ -59,7 +59,7 @@ std::string bcrypt::generate()
 	std::random_device RNG;
 	std::uniform_int_distribution<int> index_distribution(0, charset.length() - 1);
 
-	for (int i = 0; i < 21; ++i)
+	for (int i = 0; i < 22; ++i)
 	{
 		salt.push_back(charset.at(index_distribution(RNG)));
 	}
