@@ -1,4 +1,3 @@
-#include "main.h"
 #include "plugin.h"
 #include "natives.h"
 
