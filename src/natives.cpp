@@ -1,4 +1,5 @@
 #include <thread>
+#include <cstring>
 
 #include "plugin.h"
 #include "natives.h"
@@ -94,6 +95,30 @@ DECLARE_NATIVE(native::bcrypt_get_hash)
 DECLARE_NATIVE(native::bcrypt_is_equal)
 {
 	return (int)plugin::get()->get_active_match();
+}
+
+// native bool:bcrypt_needs_rehash(hash[], cost);
+DECLARE_NATIVE(native::bcrypt_needs_rehash)
+{
+	if (params[0] != sizeof(cell) * 2)
+	{
+		plugin::printf("plugin.bcrypt: bcrypt_needs_rehash: Invalid number of parameters (2 expected)");
+	}
+
+	char *hash = NULL;
+	unsigned expected_cost;
+
+	amx_StrParam(amx, params[1], hash);
+	expected_cost = static_cast<unsigned>(params[2]);
+
+	if (hash[0] != '$' || hash[1] != '2' || hash[2] != 'y' || hash[3] != '$' || hash[6] != '$' || strlen(hash) != 60)
+		return 1;
+
+	unsigned cost = (hash[4] - '0') * 10 + (hash[5] - '0');
+	if (cost != expected_cost)
+		return 1;
+
+	return 0;
 }
 
 // native bcrypt_set_thread_limit(value);

@@ -1,5 +1,5 @@
 /* The MIT License (MIT)
- * Copyright (c) 2013 Lassi R.
+ * Copyright (c) 2014 Lassi R.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of 
  * this software and associated documentation files (the "Software"), to deal in 
@@ -26,9 +26,11 @@
 #define bcrypt_included
 
 #define BCRYPT_HASH_LENGTH 61
+#define BCRYPT_PLUGIN_VERSION "2.2"
 
 native bcrypt_hash(key[], cost = 12, callback_name[], callback_format[] = "", {Float, _}:...);
 native bcrypt_check(password[], hash[], callback_name[], callback_format[] = "", {Float, _}:...);
 native bcrypt_get_hash(dest[]);
 native bool:bcrypt_is_equal();
+native bool:bcrypt_needs_rehash(hash[], cost);
 native bcrypt_set_thread_limit(value);

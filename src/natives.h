@@ -17,6 +17,7 @@ namespace native
 	DECLARE_NATIVE(bcrypt_get_hash);
 	DECLARE_NATIVE(bcrypt_check);
 	DECLARE_NATIVE(bcrypt_is_equal);
+	DECLARE_NATIVE(bcrypt_needs_rehash);
 	DECLARE_NATIVE(bcrypt_set_thread_limit);
 }
 
