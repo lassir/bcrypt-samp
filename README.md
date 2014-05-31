@@ -13,6 +13,7 @@ An implementation of bcrypt password hashing library for Pawn written in C++.
 * `bcrypt_get_hash(dest[]);`
 * `bcrypt_check(key[], hash[], callback_name[], callback_format[] = "", {Float, _}:...);`
 * `bool:bcrypt_is_equal();`
+* `bool:bcrypt_needs_rehash(hash[], cost);`
 * `bcrypt_set_thread_limit(value);`
 
 ## Usage
@@ -23,9 +24,11 @@ An implementation of bcrypt password hashing library for Pawn written in C++.
 
 * Call function `bcrypt_hash` when you would like to hash user input (e.g. on registration, or when updating the work factor). Once the hash is calculated, the callback set in the parameters will be called, and the hash can be acquired using `bcrypt_get_hash` function
 
-* Call function `bcrypt_check` when you would like to verify whether or not user input matches a given hash (e.g. on login). Once the verification is done, the callback set in the parameters will be called, and the result can be acquired using `bcrypt_is_equal` fcuntion
+* Call function `bcrypt_check` when you would like to verify whether or not user input matches a given hash (e.g. on login). Once the verification is done, the callback set in the parameters will be called, and the result can be acquired using `bcrypt_is_equal` function
 
-* If you would like to override the default number of threads used, you may use function `bcrypt_set_thread_limit`. In most cases, however, the default value is adequate.
+* If you ever change the cost, you can use `bcrypt_needs_rehash` to check whether or not a hash needs to be updated
+
+* If you would like to override the default number of threads used, you may use function `bcrypt_set_thread_limit`. In most cases, however, the default value is adequate
 
 ## Example
 ```
