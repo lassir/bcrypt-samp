@@ -2,12 +2,13 @@
 *.cbp
 *.depend
 *.layout
-bin/
-Debug/
-Release/
 *.sdf
 *.suo
 *.sdf
 *.opensdf
 *~
 *.so
+build/*
+!build/.gitkeep
+bin/*
+!bin/.gitkeep

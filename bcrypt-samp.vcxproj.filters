@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\callback.cpp" />
+    <ClCompile Include="src\bcrypt.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\natives.cpp" />
+    <ClCompile Include="src\plugin.cpp" />
+    <ClCompile Include="src\SDK\amxplugin.cpp">
+      <Filter>SDK</Filter>
+    </ClCompile>
+    <ClCompile Include="src\crypt_blowfish\crypt_blowfish.cpp">
+      <Filter>crypt_blowfish</Filter>
+    </ClCompile>
+    <ClCompile Include="src\crypt_blowfish\crypt_gensalt.cpp">
+      <Filter>crypt_blowfish</Filter>
+    </ClCompile>
+    <ClCompile Include="src\crypt_blowfish\wrapper.cpp">
+      <Filter>crypt_blowfish</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\callback.h" />
+    <ClInclude Include="src\bcrypt.h" />
+    <ClInclude Include="src\main.h" />
+    <ClInclude Include="src\natives.h" />
+    <ClInclude Include="src\plugin.h" />
+    <ClInclude Include="src\SDK\amx\amx.h">
+      <Filter>SDK\amx</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SDK\amx\sclinux.h">
+      <Filter>SDK\amx</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SDK\plugincommon.h">
+      <Filter>SDK</Filter>
+    </ClInclude>
+    <ClInclude Include="src\crypt_blowfish\ow-crypt.h">
+      <Filter>crypt_blowfish</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="bcrypt.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="SDK">
+      <UniqueIdentifier>{f024e29d-f1a5-4489-9e22-a26f10964512}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDK\amx">
+      <UniqueIdentifier>{347c1429-1f62-43db-8747-abd6f69af7ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="crypt_blowfish">
+      <UniqueIdentifier>{78891c2b-4de6-4fb9-8912-8a72285dcc0e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
