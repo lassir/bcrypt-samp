@@ -7,25 +7,24 @@
 #include "plugin.h"
 #include "bcrypt.h"
 
-plugin *plugin::instance = NULL;
+Plugin *Plugin::instance = NULL;
 
-plugin::plugin()
+Plugin::Plugin()
 {
 
 }
 
-plugin::~plugin()
+Plugin::~Plugin()
 {
-	plugin::printf("plugin.bcrypt: Plugin unloaded.");
+	Plugin::printf("plugin.bcrypt: Plugin unloaded.");
 }
 
-void plugin::initialise(void **ppData)
+void Plugin::initialise(void **data)
 {
-	pAMXFunctions = ppData[samp_sdk::PLUGIN_DATA_AMX_EXPORTS];
+	pAMXFunctions = data[samp_sdk::PLUGIN_DATA_AMX_EXPORTS];
 
-	instance = new plugin();
-
-	instance->logprintf = (plugin::logprintf_t) ppData[samp_sdk::PLUGIN_DATA_LOGPRINTF];
+	instance = new Plugin();
+	instance->logprintf = (Plugin::logprintf_t) data[samp_sdk::PLUGIN_DATA_LOGPRINTF];
 
 	unsigned threads_supported = std::thread::hardware_concurrency();
 	instance->thread_limit = threads_supported - 1;
@@ -33,31 +32,31 @@ void plugin::initialise(void **ppData)
 	if (instance->thread_limit < 1)
 		instance->thread_limit = 1;
 
-	plugin::printf("  plugin.bcrypt " BCRYPT_VERSION " was loaded.");
-	plugin::printf("  plugin.bcrypt: %d cores detected, %d threads will be used.", threads_supported, instance->thread_limit);
+	Plugin::printf("  plugin.bcrypt " BCRYPT_VERSION " was loaded.");
+	Plugin::printf("  plugin.bcrypt: %d cores detected, %d threads will be used.", threads_supported, instance->thread_limit);
 }
 
-plugin *plugin::get()
+Plugin *Plugin::get()
 {
 	return instance;
 }
 
-void plugin::add_amx(samp_sdk::AMX *amx)
+void Plugin::addAmx(samp_sdk::AMX *amx)
 {
 	this->amx_list.insert(amx);
 }
 
-void plugin::remove_amx(samp_sdk::AMX *amx)
+void Plugin::removeAmx(samp_sdk::AMX *amx)
 {
 	this->amx_list.erase(amx);
 }
 
-std::set<samp_sdk::AMX *> plugin::get_amx_list()
+std::set<samp_sdk::AMX *> Plugin::getAmxList()
 {
 	return this->amx_list;
 }
 
-void plugin::printf(const char *format, ...)
+void Plugin::printf(const char *format, ...)
 {
 	std::va_list arg_list;
 	va_start(arg_list, format);
@@ -65,76 +64,80 @@ void plugin::printf(const char *format, ...)
 	char short_buf[256];
 	vsnprintf(short_buf, sizeof(short_buf), format, arg_list);
 
-    plugin::get()->logprintf((char *) short_buf);
+	Plugin::get()->logprintf((char *)short_buf);
 
 	va_end(arg_list);
 }
 
-void plugin::set_thread_limit(unsigned value)
+void Plugin::setThreadLimit(unsigned value)
 {
 	this->thread_limit = value;
 }
 
-int plugin::get_thread_limit()
+int Plugin::getThreadLimit()
 {
 	return this->thread_limit;
 }
 
-void plugin::queue_task(unsigned short type, std::string key, unsigned short cost, callback *cb)
+void Plugin::queueTask(unsigned short type, std::string key, unsigned short cost, Callback *cb)
 {
 	this->task_queue.push({ type, key, cost, "", cb });
 }
 
-void plugin::queue_task(unsigned short type, std::string key, std::string hash, callback *cb)
+void Plugin::queueTask(unsigned short type, std::string key, std::string hash, Callback *cb)
 {
 	this->task_queue.push({ type, key, 0, hash, cb });
 }
 
-void plugin::queue_result(unsigned short type, std::string hash, bool match, callback *cb)
+void Plugin::queueResult(unsigned short type, std::string hash, bool match, Callback *cb)
 {
-	std::lock_guard<std::mutex> lock(plugin::result_queue_mutex);
+	std::lock_guard<std::mutex> lock(Plugin::result_queue_mutex);
 
 	this->result_queue.push({ type, hash, match, cb });
 	this->active_threads--;
 }
 
-bool plugin::get_active_match()
+bool Plugin::getActiveMatch()
 {
-	return plugin::get()->active_result.match;
+	return instance->active_result.match;
 }
 
-std::string plugin::get_active_hash()
+std::string Plugin::getActiveHash()
 {
-	return plugin::get()->active_result.hash;
+	return instance->active_result.hash;
 }
 
-void thread_generate_bcrypt(callback *cb, std::string buffer, short cost)
+void Plugin::generateBcryptThread(Callback *cb, std::string buffer, short cost)
 {
-	bcrypt *crypter = new bcrypt();
+	Bcrypt *crypter = new Bcrypt();
 
 	crypter
 		->setCost(cost)
 		->setPrefix("2y")
-		->setKey(buffer);
-
-	std::string hash = crypter->generate();
-
-	delete(crypter);
+		->setKey(buffer)
+		->generate();
 
 	// Add the result to the queue
-	plugin::get()->queue_result(E_QUEUE_HASH, hash, false, cb);
+	this->queueResult(QueueType::HASH, crypter->getHash(), false, cb);
+	
+	delete crypter;
 }
 
-void thread_check_bcrypt(callback *cb, std::string password, std::string hash)
+void Plugin::checkBcryptThread(Callback *cb, std::string password, std::string hash)
 {
-	bool match;
-	match = bcrypt::compare(password, hash);
+	Bcrypt *crypter = new Bcrypt();
+
+	crypter
+		->setKey(password)
+		->setHash(hash);
+
+	bool match = crypter->compare();
 
 	// Add the result to the queue
-	plugin::get()->queue_result(E_QUEUE_CHECK, std::string(), match, cb);
+	this->queueResult(QueueType::CHECK, std::string(), match, cb);
 }
 
-void plugin::process_task_queue()
+void Plugin::processTaskQueue()
 {
 	while (!this->task_queue.empty())
 	{
@@ -142,27 +145,24 @@ void plugin::process_task_queue()
 		{
 			switch (this->task_queue.front().type)
 			{
-			case E_QUEUE_HASH:
-			{
-				// Start a new thread
-				this->active_threads++;
+				case QueueType::HASH:
+				{
+					// Start a new thread
+					this->active_threads++;
 
-				std::thread t(thread_generate_bcrypt, this->task_queue.front().cb, this->task_queue.front().key, this->task_queue.front().cost);
-				t.detach();
-				break;
-			}
-			case E_QUEUE_CHECK:
-			{
-				// Start a new thread
-				this->active_threads++;
+					std::thread t(&Plugin::generateBcryptThread, this, this->task_queue.front().cb, this->task_queue.front().key, this->task_queue.front().cost);
+					t.detach();
+					break;
+				}
+				case QueueType::CHECK:
+				{
+					// Start a new thread
+					this->active_threads++;
 
-				std::thread t(thread_check_bcrypt, this->task_queue.front().cb, this->task_queue.front().key, this->task_queue.front().hash);
-				t.detach();
-				break;
-			}
-
-			default:
-				break;
+					std::thread t(&Plugin::checkBcryptThread, this, this->task_queue.front().cb, this->task_queue.front().key, this->task_queue.front().hash);
+					t.detach();
+					break;
+				}
 			}
 
 			this->task_queue.pop();
@@ -174,11 +174,11 @@ void plugin::process_task_queue()
 	}
 }
 
-void plugin::process_result_queue()
+void Plugin::processResultQueue()
 {
 	using namespace samp_sdk;
 
-	std::lock_guard<std::mutex> lock(plugin::result_queue_mutex);
+	std::lock_guard<std::mutex> lock(Plugin::result_queue_mutex);
 
 	while (!this->result_queue.empty())
 	{

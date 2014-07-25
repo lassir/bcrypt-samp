@@ -7,18 +7,19 @@
 
 #include "main.h"
 
-class callback
+class Callback
 {
 
 public:
-	callback();
+	Callback();
+	Callback(std::string name);
 
-	void setName(std::string name);
-	void addFromFormat(samp_sdk::AMX *amx, const char *format, samp_sdk::cell *params, unsigned int param_offset);
-	void addParameter(int parameter);
-	void addParameter(std::string parameter);
+	Callback* setName(std::string name);
+	Callback* addFromFormat(samp_sdk::AMX *amx, const char *format, samp_sdk::cell *params, unsigned int param_offset);
+	Callback* addParameter(int parameter);
+	Callback* addParameter(std::string parameter);
 
-	void exec();
+	Callback* exec();
 
 private:
 	std::set<samp_sdk::AMX *> amx_list;

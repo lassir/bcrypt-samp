@@ -3,22 +3,28 @@
 #include "callback.h"
 #include "plugin.h"
 
-callback::callback()
+Callback::Callback()
 {
 
 }
 
-void callback::setName(std::string name)
+Callback::Callback(std::string name)
 {
 	this->name = name;
 }
 
-void callback::addFromFormat(samp_sdk::AMX *amx, const char *format, samp_sdk::cell *params, unsigned int param_offset)
+Callback* Callback::setName(std::string name)
+{
+	this->name = name;
+	return this;
+}
+
+Callback* Callback::addFromFormat(samp_sdk::AMX *amx, const char *format, samp_sdk::cell *params, unsigned int param_offset)
 {
 	using namespace samp_sdk;
 
 	if (format == NULL)
-		return;
+		return this;
 
 	cell *addr_ptr = NULL;
 	unsigned int param_index = 1;
@@ -41,47 +47,49 @@ void callback::addFromFormat(samp_sdk::AMX *amx, const char *format, samp_sdk::c
 			break;
 		}
 	} while (*(++format));
+
+	return this;
 }
 
-void callback::addParameter(int parameter)
+Callback* Callback::addParameter(int parameter)
 {
 	this->parameters.push_front(parameter);
+	return this;
 }
 
-void callback::addParameter(std::string parameter)
+Callback* Callback::addParameter(std::string parameter)
 {
 	this->parameters.push_front(parameter);
+	return this;
 }
 
-void callback::exec()
+Callback* Callback::exec()
 {
 	using namespace samp_sdk;
 
 	if (this->name.empty())
-		return;
+		return this;
 
-	std::set<AMX *> amx_list = plugin::get()->get_amx_list();
+	std::set<AMX *> amx_list = Plugin::get()->getAmxList();
 
 	for (std::set<AMX *>::iterator amx = amx_list.begin(); amx != amx_list.end(); ++amx)
 	{
 		int amx_idx = 0;
 
-		if (amx_FindPublic((*amx), this->name.c_str(), &amx_idx) == AMX_ERR_NONE)
+		if (amx_FindPublic(*amx, this->name.c_str(), &amx_idx) == AMX_ERR_NONE)
 		{
 			cell amx_addr = -1;
 
 			for (std::deque<boost::variant<int, std::string>>::iterator parameter = this->parameters.begin(); parameter != this->parameters.end(); ++parameter)
 			{
-				const boost::variant<int, std::string> &param = (*parameter);
-
-				if (param.type() == typeid(int))
+				if (parameter->type() == typeid(int))
 				{
-					amx_Push((*amx), boost::get<int>(param));
+					amx_Push((*amx), boost::get<int>(*parameter));
 				}
 				else
 				{
 					cell tmp_addr;
-					amx_PushString((*amx), &tmp_addr, NULL, boost::get<std::string>(param).c_str(), 0, 0);
+					amx_PushString((*amx), &tmp_addr, NULL, boost::get<std::string>(*parameter).c_str(), 0, 0);
 
 					if (amx_addr < 0)
 						amx_addr = tmp_addr;
@@ -89,10 +97,11 @@ void callback::exec()
 			}
 
 			cell amx_ret;
-			amx_Exec((*amx), &amx_ret, amx_idx);
+			amx_Exec(*amx, &amx_ret, amx_idx);
 
 			if (amx_addr >= 0)
-				amx_Release((*amx), amx_addr);
+				amx_Release(*amx, amx_addr);
 		}
 	}
+	return this;
 }

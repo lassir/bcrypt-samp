@@ -14,33 +14,33 @@ AMX_NATIVE_INFO PluginNatives [] =
 	{ 0, 0 }
 };
 
-PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
+PLUGIN_EXPORT bool PLUGIN_CALL Load(void **data)
 {
-	plugin::initialise(ppData);
+	Plugin::initialise(data);
 	return true;
 }
 
 PLUGIN_EXPORT void PLUGIN_CALL Unload()
 {
-	delete(plugin::get());
+	delete(Plugin::get());
 }
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx)
 {
-	plugin::get()->add_amx(amx);
+	Plugin::get()->addAmx(amx);
 	return amx_Register(amx, PluginNatives, -1);
 }
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX *amx)
 {
-	plugin::get()->remove_amx(amx);
+	Plugin::get()->removeAmx(amx);
 	return AMX_ERR_NONE;
 }
 
 PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 {
-	plugin::get()->process_result_queue();
-	plugin::get()->process_task_queue();
+	Plugin::get()->processResultQueue();
+	Plugin::get()->processTaskQueue();
 }
 
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
