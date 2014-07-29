@@ -26,11 +26,12 @@
 #define bcrypt_included
 
 #define BCRYPT_HASH_LENGTH 61
-#define BCRYPT_PLUGIN_VERSION "2.2"
+#define BCRYPT_PLUGIN_VERSION "2.2.2"
 
 native bcrypt_hash(key[], cost = 12, callback_name[], callback_format[] = "", {Float, _}:...);
 native bcrypt_check(password[], hash[], callback_name[], callback_format[] = "", {Float, _}:...);
 native bcrypt_get_hash(dest[]);
 native bool:bcrypt_is_equal();
 native bool:bcrypt_needs_rehash(hash[], cost);
+native bcrypt_find_cost(time_target = 250);
 native bcrypt_set_thread_limit(value);

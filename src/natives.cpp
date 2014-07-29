@@ -1,6 +1,8 @@
 #include <thread>
+#include <chrono>
 #include <cstring>
 
+#include "bcrypt.h"
 #include "plugin.h"
 #include "natives.h"
 
@@ -115,6 +117,63 @@ DECLARE_NATIVE(native::bcrypt_needs_rehash)
 		return 1;
 
 	return 0;
+}
+
+// native bcrypt_find_cost(time_target = 250);
+DECLARE_NATIVE(native::bcrypt_find_cost)
+{
+	if (params[0] != 1 * sizeof(cell))
+	{
+		Plugin::printf("plugin.bcrypt: bcrypt_find_cost: Invalid number of parameters (1 expected)");
+		return 0;
+	}
+
+	int time_target = static_cast<int>(params[1]);
+	Plugin::printf("plugin.bcrypt: Calculating appropriate cost for time target %d ms...", time_target);
+
+	int previous_time;
+
+	for (int cost = 4; cost <= 31; ++cost)
+	{
+		auto start_time = std::chrono::system_clock::now();
+
+		Bcrypt *crypter = new Bcrypt();
+		crypter
+			->setCost(cost)
+			->setPrefix("2y")
+			->setKey("Hello World!")
+			->generate();
+
+		delete crypter;
+
+		auto end_time = std::chrono::system_clock::now();
+		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+
+		if (elapsed.count() > time_target)
+		{
+			int previous_difference = time_target - previous_time;
+			int current_difference = elapsed.count() - time_target;
+
+			Plugin::printf("plugin.bcrypt: Cost %d: %d ms (-%d ms)", cost - 1, previous_time, previous_difference);
+			Plugin::printf("plugin.bcrypt: Cost %d: %d ms (+%d ms)", cost, static_cast<int>(elapsed.count()), current_difference);
+
+			// Choose the cost closest to the time target
+			if (current_difference < previous_difference)
+			{
+				Plugin::printf("plugin.bcrypt: => Best match is cost %d.", cost);
+				return cost;
+			}
+			else
+			{
+				Plugin::printf("plugin.bcrypt: => Best match is cost %d.", cost - 1);
+				return cost - 1;
+			}
+		}
+
+		previous_time = elapsed.count();
+	}
+
+	return 31;
 }
 
 // native bcrypt_set_thread_limit(value);

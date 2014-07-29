@@ -10,6 +10,7 @@ AMX_NATIVE_INFO PluginNatives [] =
 	DEFINE_NATIVE(bcrypt_get_hash)
 	DEFINE_NATIVE(bcrypt_is_equal)
 	DEFINE_NATIVE(bcrypt_needs_rehash)
+	DEFINE_NATIVE(bcrypt_find_cost)
 	DEFINE_NATIVE(bcrypt_set_thread_limit)
 	{ 0, 0 }
 };
