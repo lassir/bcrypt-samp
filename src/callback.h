@@ -19,6 +19,8 @@ public:
 	Callback* addParameter(int parameter);
 	Callback* addParameter(std::string parameter);
 
+	std::string getName() { return this->name; }
+
 	Callback* exec();
 
 private:

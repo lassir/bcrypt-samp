@@ -1,5 +1,7 @@
 #include <set>
 
+#include <boost/log/trivial.hpp>
+
 #include "callback.h"
 #include "plugin.h"
 
@@ -65,6 +67,8 @@ Callback* Callback::addParameter(std::string parameter)
 
 Callback* Callback::exec()
 {
+	BOOST_LOG_TRIVIAL(trace) << "Executing callback " << this->getName();
+
 	using namespace samp_sdk;
 
 	if (this->name.empty())
@@ -74,10 +78,13 @@ Callback* Callback::exec()
 
 	for (std::set<AMX *>::iterator amx = amx_list.begin(); amx != amx_list.end(); ++amx)
 	{
+		BOOST_LOG_TRIVIAL(trace) << "Callback::exec: AMX: " << *amx;
 		int amx_idx = 0;
 
 		if (amx_FindPublic(*amx, this->name.c_str(), &amx_idx) == AMX_ERR_NONE)
 		{
+			BOOST_LOG_TRIVIAL(trace) << *amx << ": Public found";
+
 			cell amx_addr = -1;
 
 			for (std::deque<boost::variant<int, std::string>>::iterator parameter = this->parameters.begin(); parameter != this->parameters.end(); ++parameter)
@@ -101,6 +108,10 @@ Callback* Callback::exec()
 
 			if (amx_addr >= 0)
 				amx_Release(*amx, amx_addr);
+		}
+		else
+		{
+			BOOST_LOG_TRIVIAL(trace) << *amx << ": Public not found";
 		}
 	}
 	return this;

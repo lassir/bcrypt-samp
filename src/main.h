@@ -4,6 +4,6 @@
 #include "SDK/amx/amx.h"
 #include "SDK/plugincommon.h"
 
-#define BCRYPT_VERSION "v2.2.2"
+#define BCRYPT_VERSION "v2.2.3"
 
 #endif

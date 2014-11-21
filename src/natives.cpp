@@ -2,6 +2,8 @@
 #include <chrono>
 #include <cstring>
 
+#include <boost/log/trivial.hpp>
+
 #include "bcrypt.h"
 #include "plugin.h"
 #include "natives.h"
@@ -11,9 +13,11 @@ using namespace samp_sdk;
 // native bcrypt_hash(key[], cost, callback_name[], callback_format[], {Float, _}:...);
 DECLARE_NATIVE(native::bcrypt_hash)
 {
+	BOOST_LOG_TRIVIAL(trace) << "bcrypt_hash called";
+
 	if (params[0] < 3 * sizeof(cell))
 	{
-		Plugin::printf("plugin.bcrypt: bcrypt_hash: Too few parameters (3 required)");
+		BOOST_LOG_TRIVIAL(error) << "bcrypt_hash: Too few parameters (" << params[0] * sizeof(cell) << " given, 3 required)";
 		return 0;
 	}
 
@@ -21,7 +25,7 @@ DECLARE_NATIVE(native::bcrypt_hash)
 
 	if (cost < 4 || cost > 31)
 	{
-		Plugin::printf("plugin.bcrypt: bcrypt_hash: Invalid work factor (expected 4-31)");
+		BOOST_LOG_TRIVIAL(error) << "bcrypt_hash: Invalid work factor: " << cost << " given, expected 4-31";
 		return 0;
 	}
 
@@ -47,9 +51,11 @@ DECLARE_NATIVE(native::bcrypt_hash)
 // native bcrypt_check(thread_idx, thread_id, const password[], const hash[]);
 DECLARE_NATIVE(native::bcrypt_check)
 {
+	BOOST_LOG_TRIVIAL(trace) << "bcrypt_check called";
+
 	if (params[0] < 3 * sizeof(cell))
 	{
-		Plugin::printf("plugin.bcrypt: bcrypt_check: Too few parameters (3 required)");
+		BOOST_LOG_TRIVIAL(error) << "bcrypt_check: Too few parameters (" << params[0] * sizeof(cell) << " given, 3 required)";
 		return 0;
 	}
 
@@ -77,9 +83,11 @@ DECLARE_NATIVE(native::bcrypt_check)
 // native bcrypt_get_hash(destination[]);
 DECLARE_NATIVE(native::bcrypt_get_hash)
 {
+	BOOST_LOG_TRIVIAL(trace) << "bcrypt_get_hash called";
+
 	if (params[0] != sizeof(cell))
 	{
-		Plugin::printf("plugin.bcrypt: bcrypt_get_hash: Invalid number of parameters (1 expected)");
+		BOOST_LOG_TRIVIAL(error) << "bcrypt_get_hash: Invalid number of parameters (" << params[0] * sizeof(cell) << " given, 1 expected)";
 		return 0;
 	}
 
@@ -92,15 +100,20 @@ DECLARE_NATIVE(native::bcrypt_get_hash)
 // native bool:bcrypt_is_equal(destination[]);
 DECLARE_NATIVE(native::bcrypt_is_equal)
 {
+	BOOST_LOG_TRIVIAL(trace) << "bcrypt_is_equal called";
+
 	return Plugin::get()->getActiveMatch();
 }
 
 // native bool:bcrypt_needs_rehash(hash[], cost);
 DECLARE_NATIVE(native::bcrypt_needs_rehash)
 {
+	BOOST_LOG_TRIVIAL(trace) << "bcrypt_needs_rehash called";
+
 	if (params[0] != sizeof(cell) * 2)
 	{
-		Plugin::printf("plugin.bcrypt: bcrypt_needs_rehash: Invalid number of parameters (2 expected)");
+		BOOST_LOG_TRIVIAL(error) << "bcrypt_needs_rehash: Invalid number of parameters (" << params[0] * sizeof(cell) << " given, 2 expected)";
+		return 0;
 	}
 
 	char *hash = NULL;
@@ -122,9 +135,11 @@ DECLARE_NATIVE(native::bcrypt_needs_rehash)
 // native bcrypt_find_cost(time_target = 250);
 DECLARE_NATIVE(native::bcrypt_find_cost)
 {
+	BOOST_LOG_TRIVIAL(trace) << "bcrypt_find_cost called";
+
 	if (params[0] != 1 * sizeof(cell))
 	{
-		Plugin::printf("plugin.bcrypt: bcrypt_find_cost: Invalid number of parameters (1 expected)");
+		BOOST_LOG_TRIVIAL(error) << "bcrypt_find_cost: Invalid number of parameters (" << params[0] * sizeof(cell) << " given, 1 expected)";
 		return 0;
 	}
 
@@ -179,9 +194,11 @@ DECLARE_NATIVE(native::bcrypt_find_cost)
 // native bcrypt_set_thread_limit(value);
 DECLARE_NATIVE(native::bcrypt_set_thread_limit)
 {
+	BOOST_LOG_TRIVIAL(trace) << "bcrypt_set_thread_limit called";
+
 	if (params[0] != 1 * sizeof(cell))
 	{
-		Plugin::printf("plugin.bcrypt: The thread limit must be at least 1.");
+		BOOST_LOG_TRIVIAL(error) << "bcrypt_set_thread_limit: Invalid number of parameters (" << params[0] * sizeof(cell) << " given, 1 expected)";
 		return 0;
 	}
 

@@ -12,3 +12,4 @@ build/*
 !build/.gitkeep
 bin/*
 !bin/.gitkeep
+Debug/
