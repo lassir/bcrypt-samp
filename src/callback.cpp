@@ -67,7 +67,7 @@ Callback* Callback::addParameter(std::string parameter)
 
 Callback* Callback::exec()
 {
-	BOOST_LOG_TRIVIAL(trace) << "Executing callback " << this->getName();
+	BOOST_LOG_TRIVIAL(trace) << "Executing callback " << this->getName() << "...";
 
 	using namespace samp_sdk;
 
@@ -78,12 +78,12 @@ Callback* Callback::exec()
 
 	for (std::set<AMX *>::iterator amx = amx_list.begin(); amx != amx_list.end(); ++amx)
 	{
-		BOOST_LOG_TRIVIAL(trace) << "Callback::exec: AMX: " << *amx;
+		BOOST_LOG_TRIVIAL(trace) << "  Callback::exec: " << *amx;
 		int amx_idx = 0;
 
 		if (amx_FindPublic(*amx, this->name.c_str(), &amx_idx) == AMX_ERR_NONE)
 		{
-			BOOST_LOG_TRIVIAL(trace) << *amx << ": Public found";
+			BOOST_LOG_TRIVIAL(trace) << "    => Public found.";
 
 			cell amx_addr = -1;
 
@@ -111,7 +111,7 @@ Callback* Callback::exec()
 		}
 		else
 		{
-			BOOST_LOG_TRIVIAL(trace) << *amx << ": Public not found";
+			BOOST_LOG_TRIVIAL(trace) << "    => Public not found.";
 		}
 	}
 	return this;

@@ -14,6 +14,7 @@
 #include "plugin.h"
 #include "bcrypt.h"
 
+namespace logging = boost::log;
 namespace expr = boost::log::expressions;
 namespace keywords = boost::log::keywords;
 
@@ -47,13 +48,13 @@ void Plugin::initialise(void **data)
 		keywords::file_name = "bcrypt_log.txt",
 		keywords::auto_flush = true,
 		keywords::format = expr::stream
-			<< expr::format_date_time< boost::posix_time::ptime >("TimeStamp", "%Y-%m-%d %H:%M:%S") 
+			<< expr::format_date_time< boost::posix_time::ptime >("TimeStamp", "%Y-%m-%d %H:%M:%S.%f") 
 			<< " <" << boost::log::trivial::severity << "> "
 			<< expr::message
 	);
 
 	boost::log::core::get()->set_filter(
-		boost::log::trivial::severity >= boost::log::trivial::trace
+		boost::log::trivial::severity >= boost::log::trivial::error
 	);
 
 	boost::log::add_common_attributes();
@@ -112,22 +113,22 @@ int Plugin::getThreadLimit()
 
 void Plugin::queueTask(unsigned short type, std::string key, unsigned short cost, Callback *cb)
 {
-	BOOST_LOG_TRIVIAL(debug) << "Task queued: '" << cb->getName() << "'";
+	BOOST_LOG_TRIVIAL(debug) << "Task " << cb->getName() << " queued.";
 	this->task_queue.push({ type, key, cost, "", cb });
 }
 
 void Plugin::queueTask(unsigned short type, std::string key, std::string hash, Callback *cb)
 {
-	BOOST_LOG_TRIVIAL(debug) << "Task queued: '" << cb->getName() << "'";
+	BOOST_LOG_TRIVIAL(debug) << "Task " << cb->getName() << " queued.";
 	this->task_queue.push({ type, key, 0, hash, cb });
 }
 
 void Plugin::queueResult(unsigned short type, std::string hash, bool match, Callback *cb)
 {
-	BOOST_LOG_TRIVIAL(trace) << "Queue result: '" << cb->getName() << "'. Waiting for mutex.";
+	BOOST_LOG_TRIVIAL(trace) << "Result for " << cb->getName() << ": Waiting for a mutex...";
 	std::lock_guard<std::mutex> lock(Plugin::result_queue_mutex);
 
-	BOOST_LOG_TRIVIAL(debug) << "Queue result: '" << cb->getName() << "'. Mutex obtained, adding to queue.";
+	BOOST_LOG_TRIVIAL(debug) << "Result for " << cb->getName() << ": Mutex obtained, adding to the queue.";
 	this->result_queue.push({ type, hash, match, cb });
 	this->active_threads--;
 }
@@ -144,8 +145,6 @@ std::string Plugin::getActiveHash()
 
 void Plugin::generateBcryptThread(Callback *cb, std::string buffer, short cost)
 {
-	BOOST_LOG_TRIVIAL(debug) << "Thread created: generateBcryptThread (" << cb->getName() << ")";
-
 	Bcrypt *crypter = new Bcrypt();
 
 	crypter
@@ -162,8 +161,6 @@ void Plugin::generateBcryptThread(Callback *cb, std::string buffer, short cost)
 
 void Plugin::checkBcryptThread(Callback *cb, std::string password, std::string hash)
 {
-	BOOST_LOG_TRIVIAL(debug) << "Thread created: checkBcryptThread (" << cb->getName() << ")";
-
 	Bcrypt *crypter = new Bcrypt();
 
 	crypter
@@ -187,7 +184,7 @@ void Plugin::processTaskQueue()
 				case QueueType::HASH:
 				{
 					// Start a new thread
-					BOOST_LOG_TRIVIAL(trace) << "Preparing to create a thread for '" << this->task_queue.front().cb->getName() << "'";
+					BOOST_LOG_TRIVIAL(trace) << "Crating a thread for " << this->task_queue.front().cb->getName() << "...";
 					this->active_threads++;
 
 					std::thread t(&Plugin::generateBcryptThread, this, this->task_queue.front().cb, this->task_queue.front().key, this->task_queue.front().cost);
@@ -197,7 +194,7 @@ void Plugin::processTaskQueue()
 				case QueueType::CHECK:
 				{
 					// Start a new thread
-					BOOST_LOG_TRIVIAL(trace) << "Preparing to create a thread for '" << this->task_queue.front().cb->getName() << "'";
+					BOOST_LOG_TRIVIAL(trace) << "Creating a thread for " << this->task_queue.front().cb->getName() << "...";
 					this->active_threads++;
 
 					std::thread t(&Plugin::checkBcryptThread, this, this->task_queue.front().cb, this->task_queue.front().key, this->task_queue.front().hash);
@@ -223,7 +220,7 @@ void Plugin::processResultQueue()
 
 	while (!this->result_queue.empty())
 	{
-		BOOST_LOG_TRIVIAL(debug) << "Calling callback '" << this->result_queue.front().cb->getName() << "'";
+		BOOST_LOG_TRIVIAL(debug) << "Calling callback " << this->result_queue.front().cb->getName() << "...";
 
 		this->active_result.hash = this->result_queue.front().hash;
 		this->active_result.match = this->result_queue.front().match;

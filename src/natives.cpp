@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
 
 #include "bcrypt.h"
 #include "plugin.h"
@@ -10,10 +11,12 @@
 
 using namespace samp_sdk;
 
+namespace logging = boost::log;
+
 // native bcrypt_hash(key[], cost, callback_name[], callback_format[], {Float, _}:...);
 DECLARE_NATIVE(native::bcrypt_hash)
 {
-	BOOST_LOG_TRIVIAL(trace) << "bcrypt_hash called";
+	BOOST_LOG_TRIVIAL(trace) << "Native bcrypt_hash() called.";
 
 	if (params[0] < 3 * sizeof(cell))
 	{
@@ -51,7 +54,7 @@ DECLARE_NATIVE(native::bcrypt_hash)
 // native bcrypt_check(thread_idx, thread_id, const password[], const hash[]);
 DECLARE_NATIVE(native::bcrypt_check)
 {
-	BOOST_LOG_TRIVIAL(trace) << "bcrypt_check called";
+	BOOST_LOG_TRIVIAL(trace) << "Native bcrypt_check() called.";
 
 	if (params[0] < 3 * sizeof(cell))
 	{
@@ -83,7 +86,7 @@ DECLARE_NATIVE(native::bcrypt_check)
 // native bcrypt_get_hash(destination[]);
 DECLARE_NATIVE(native::bcrypt_get_hash)
 {
-	BOOST_LOG_TRIVIAL(trace) << "bcrypt_get_hash called";
+	BOOST_LOG_TRIVIAL(trace) << "Native bcrypt_get_hash() called.";
 
 	if (params[0] != sizeof(cell))
 	{
@@ -100,7 +103,7 @@ DECLARE_NATIVE(native::bcrypt_get_hash)
 // native bool:bcrypt_is_equal(destination[]);
 DECLARE_NATIVE(native::bcrypt_is_equal)
 {
-	BOOST_LOG_TRIVIAL(trace) << "bcrypt_is_equal called";
+	BOOST_LOG_TRIVIAL(trace) << "Native bcrypt_is_equal() called.";
 
 	return Plugin::get()->getActiveMatch();
 }
@@ -108,7 +111,7 @@ DECLARE_NATIVE(native::bcrypt_is_equal)
 // native bool:bcrypt_needs_rehash(hash[], cost);
 DECLARE_NATIVE(native::bcrypt_needs_rehash)
 {
-	BOOST_LOG_TRIVIAL(trace) << "bcrypt_needs_rehash called";
+	BOOST_LOG_TRIVIAL(trace) << "Native bcrypt_needs_rehash() called.";
 
 	if (params[0] != sizeof(cell) * 2)
 	{
@@ -135,7 +138,7 @@ DECLARE_NATIVE(native::bcrypt_needs_rehash)
 // native bcrypt_find_cost(time_target = 250);
 DECLARE_NATIVE(native::bcrypt_find_cost)
 {
-	BOOST_LOG_TRIVIAL(trace) << "bcrypt_find_cost called";
+	BOOST_LOG_TRIVIAL(trace) << "Native bcrypt_find_cost() called.";
 
 	if (params[0] != 1 * sizeof(cell))
 	{
@@ -194,7 +197,7 @@ DECLARE_NATIVE(native::bcrypt_find_cost)
 // native bcrypt_set_thread_limit(value);
 DECLARE_NATIVE(native::bcrypt_set_thread_limit)
 {
-	BOOST_LOG_TRIVIAL(trace) << "bcrypt_set_thread_limit called";
+	BOOST_LOG_TRIVIAL(trace) << "Native bcrypt_set_thread_limit() called.";
 
 	if (params[0] != 1 * sizeof(cell))
 	{
@@ -215,6 +218,70 @@ DECLARE_NATIVE(native::bcrypt_set_thread_limit)
 	{
 		Plugin::printf("plugin.bcrypt: The thread limit must be at least 1.");
 		return 0;
+	}
+
+	return 1;
+}
+
+
+// native bcrypt_debug(level)
+DECLARE_NATIVE(native::bcrypt_debug)
+{
+	BOOST_LOG_TRIVIAL(trace) << "Native bcrypt_debug() called.";
+
+	if (params[0] != 1 * sizeof(cell))
+	{
+		BOOST_LOG_TRIVIAL(error) << "bcrypt_debug: Invalid number of parameters (" << params[0] * sizeof(cell) << " given, 1 expected)";
+		return 0;
+	}
+
+	enum DebugLevel {
+		LOG_FATAL,
+		LOG_ERROR,
+		LOG_WARNING,
+		LOG_INFO,
+		LOG_DEBUG,
+		LOG_TRACE
+	};
+
+	unsigned debug_level = static_cast<unsigned>(params[1]);
+
+	switch (debug_level)
+	{
+	case DebugLevel::LOG_FATAL:
+		logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::fatal);
+		BOOST_LOG_TRIVIAL(info) << "Debugging level changed: Log fatal errors.";
+		break;
+
+	case DebugLevel::LOG_ERROR:
+		logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::error);
+		BOOST_LOG_TRIVIAL(info) << "Debugging level changed: Log errors.";
+		break;
+
+	case DebugLevel::LOG_WARNING:
+		logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::warning);
+		BOOST_LOG_TRIVIAL(info) << "Debugging level changed: Log warnings.";
+		break;
+
+	case DebugLevel::LOG_INFO:
+		logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::info);
+		BOOST_LOG_TRIVIAL(info) << "Debugging level changed: Log info messages.";
+		break;
+
+	case DebugLevel::LOG_DEBUG:
+		logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::debug);
+		BOOST_LOG_TRIVIAL(info) << "Debugging level changed: Log debugging messages.";
+		break;
+
+	case DebugLevel::LOG_TRACE:
+		logging::core::get()->set_filter(logging::trivial::severity >= logging::trivial::trace);
+		BOOST_LOG_TRIVIAL(info) << "Debugging level changed: Log trace messages.";
+		break;
+
+	default:
+		BOOST_LOG_TRIVIAL(error) << "bcrypt_debug: Invalid debugging level (" << debug_level << ")";
+		break;
+
 	}
 
 	return 1;
