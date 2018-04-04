@@ -1,0 +1,22 @@
+{
+    "user": "lassir",
+    "repo": "bcrypt-samp",
+    "include_path": "pawn",
+    "resources": [
+        {
+            "name": "^bcrypt-samp-.+-windows\\.zip$",
+            "platform": "windows",
+            "archive": true,
+            "plugins": ["bcrypt-samp-.+/bcrypt-samp.dll"]
+        },
+        {
+            "name": "^bcrypt-samp-.+-debian[_-]7.*\\.(?:tar\\.gz|zip)$",
+            "platform": "linux",
+            "archive": true,
+            "plugins": ["bcrypt-samp-.+/bcrypt-samp.so"]
+        }
+    ],
+    "runtime": {
+        "plugins": ["lassir/bcrypt-samp"]
+    }
+}
