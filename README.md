@@ -47,7 +47,7 @@ See the [Wiki](wiki) for detailed usage.
 * If you would like to override the default number of threads used, you may use function `bcrypt_set_thread_limit`. In most cases, however, the default value is adequate
 
 ## Example
-```
+```Pawn
 #include <a_samp>
 #include <bcrypt>
 
