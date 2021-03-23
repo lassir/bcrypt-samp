@@ -88,7 +88,7 @@ public OnPasswordChecked(playerid)
 {
 	new bool:match = bcrypt_is_equal();
 	
-	printf("Password checked for %d: %s", (match) ? ("Match") : ("No match"));
+	printf("Password checked for %d: %s", playerid, (match) ? ("Match") : ("No match"));
 	return 1;
 }
 ```
