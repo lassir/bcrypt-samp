@@ -26,7 +26,7 @@
 #define bcrypt_included
 
 #define BCRYPT_HASH_LENGTH 61
-#define BCRYPT_PLUGIN_VERSION "2.2.4"
+#define BCRYPT_PLUGIN_VERSION "2.2.5"
 
 enum BCRYPT_DEBUG_LEVEL {
 	BCRYPT_LOG_FATAL,
